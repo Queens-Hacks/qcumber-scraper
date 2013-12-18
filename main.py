@@ -1,0 +1,114 @@
+import logging
+from threading import Thread
+try:
+    from queue import Queue, Empty
+except ImportError:
+    # Python 2.x
+    from Queue import Queue, Empty
+
+#from navigation import SolusSession
+
+class ScrapeJob(dict):
+    """
+    Holds data on a scraper job. Includes default arguments.
+    """
+
+    def __init__(self, *args, **kwargs):
+        dict.__init__(self, *args, **kwargs)
+
+        # Supply custom defaults
+        self["deep"] = self.get("deep", True)
+        self["letters"] = self.get("letters", "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+        self["subject_start"] = self.get("subject_start", 0)
+        self["subject_step"] = self.get("subject_step", 1)
+        self["subject_end"] = self.get("subject_end", None)
+        self["course_start"] = self.get("course_start", 0)
+        self["course_end"] = self.get("course_end", None)
+
+
+class Scraper(object):
+    """Handles dividing up the scraping work and starting the scraper threads"""
+
+    def __init__(self, user, passwd, config):
+        """Initialize the Scraper object"""
+
+        self.user = user
+        self.passwd = passwd
+        self.config = config
+        self.jobs = Queue()
+
+        # Enforce a range of 1 - 10 threads with a default of 5
+        self.config["threads"] = max(min(self.config.get("threads", 5), 10), 1)
+        self.config["job"] = self.config.get("job", ScrapeJob())
+        
+        # Divide up the work for the number of threads
+        self.make_jobs()
+    
+    def start(self):
+        """Start running the scraping threads"""
+
+        self.start_jobs()
+
+    def make_jobs(self):
+        """Takes the configuration and returns a list of jobs"""
+
+        job = self.config["job"]
+        letters = job["letters"]
+
+        threads_per_letter = (self.config["threads"] - 1)/len(letters) + 1
+
+        for l in letters:
+            job_letter = ScrapeJob(job)
+            job_letter["letters"] = l
+            for s in range(0, threads_per_letter):
+                temp = ScrapeJob(job_letter)
+                temp["subject_start_idx"] = s
+                temp["subject_step"] = threads_per_letter
+                logging.info("Made job: {}".format(temp))
+                self.jobs.put_nowait(temp)
+    
+    def run_jobs(self):
+        """Initialize a SOLUS session and run the jobs"""
+
+        # Initialize the session
+        try:
+            raise EnvironmentError("No scraper availible")
+            # TODO: Create a session and log in
+            #session = SolusSession(self.user, self.passwd)
+        except EnvironmentError as e:
+            logging.critical(e)
+            # Can't log in, can't do anything
+            return
+
+        while True:
+            try:
+                job = self.jobs.get_nowait()
+            except Empty as e:
+                return
+
+            # TODO: Run the job
+
+    def start_jobs(self):
+        """Start the threads that perform the jobs"""
+
+        threads = []
+        for x in range(self.config["threads"]):
+            threads.append(Thread(target=self.run_jobs))
+            threads[-1].start()
+
+        for t in threads:
+            t.join()
+
+
+if __name__ == "__main__":
+
+    logging.basicConfig(level=logging.INFO)
+
+    # Testing
+    config = dict(
+        name = "Shallow scrape with threading",
+        description = "Scrapes the entire catalog using multiple threads",
+        threads = 5,
+        job = ScrapeJob(letters="ABC", deep=False)
+    )
+    Scraper("user", "pass", config).start()
