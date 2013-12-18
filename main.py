@@ -111,4 +111,12 @@ if __name__ == "__main__":
         threads = 5,
         job = ScrapeJob(letters="ABC", deep=False)
     )
-    Scraper("user", "pass", config).start()
+
+    # Get credientials
+    try:
+        from config import SCRAPER_USER, SCRAPER_PASS
+    except ImportError:
+        logging.critical("No credientials found. Create a config.py file with SCRAPER_USER and SCRAPER_PASS constants")
+
+    # Start scraping
+    Scraper(SCRAPER_USER, SCRAPER_PASS, config).start()
