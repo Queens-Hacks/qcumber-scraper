@@ -83,11 +83,11 @@ class SolusSession(object):
            'IDButton': '%C2%A0Log+In%C2%A0',
         }
         self._post(self.latest_response.url, data=payload)
-       
+
         # Check for the continue page
         if self.continue_url in self.latest_response.url:
             self.do_continue_page()
-        
+
         # Should now be authenticated and on the my.queensu.ca page, submit a request for the URL in the 'SOLUS' button
         link = self.parser.login_solus_link()
         if not link:
@@ -109,8 +109,10 @@ class SolusSession(object):
         The SSO system returns a specific page only if JS is disabled
         It has you click a Continue button which submits a form with some hidden values
         """
-        url, payload = self.parser.login_continue_page()
-        self._post(url, data=payload)
+        data = self.parser.login_continue_page()
+        if not data:
+            return
+        self._post(data["url"], data=data["payload"])
 
     def go_to_course_catalog(self):
         self._catalog_post("")
@@ -130,7 +132,7 @@ class SolusSession(object):
     #def subject_from_dropdown(self, subject_index):
     #    """Returns the subject with the specified index on the current alphanum's page, or none if the dropdown index does not exist"""
     #    return AlphanumParser(self.soup).subject_from_dropdown(subject_index)
-       
+
     def dropdown_subject(self, subject):
         """Opens the dropdown menu for a subject"""
         if self.recovery_state < 0:
@@ -155,7 +157,7 @@ class SolusSession(object):
     #    """Opens a course page by following the course link with the supplied index"""
     #    if self.recovery_state < 0:
     #        self.recovery_stack[2] = course_index
-    #    
+    #
     #    action = SubjectParser(self.soup).course_link_id(course_index)
     #    self._catalog_post(action)
 
@@ -187,7 +189,6 @@ class SolusSession(object):
         """Shows the sections for a given term"""
         if self.recovery_state < 0:
             self.recovery_stack[3] = term
-        
         self._catalog_post(action='DERIVED_SAA_CRS_SSR_PB_GO$92$', extras={'DERIVED_SAA_CRS_TERM_ALT': term.dropdown_value})
 
     #def multiple_section_pages_available(self):
@@ -208,7 +209,7 @@ class SolusSession(object):
             self.recovery_stack[4] = section
 
         self._catalog_post(section.click_action)
-    
+
     #def scrape_section_page(self, section):
     #    """Adds the information available on the dedicated section page to the provided section"""
     #    return SectionParser(self.soup).add_section_page_attributes(section)
@@ -224,14 +225,14 @@ class SolusSession(object):
     def _get(self, url, **kwargs):
         self.latest_response = self.session.get(url, **kwargs)
         self._update_attrs()
-    
+
     def _post(self, url, **kwargs):
         self.latest_response = self.session.post(url, **kwargs)
         self._update_attrs()
 
     def _update_attrs(self):
         self.latest_text = self.latest_response.text
-        
+
         # The parser requires an update
         self._update_parser = True
 
