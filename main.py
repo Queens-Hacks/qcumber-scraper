@@ -83,13 +83,11 @@ class JobManager(object):
 
         # Run all the jobs in the job queue
         while True:
-            try:
-                job = self.jobs.get_nowait()
-            except Empty as e:
-                return
+            job = self.jobs.get()
 
             # Run the job
             SolusScraper(session, job).start()
+            self.jobs.task_done()
 
     def start_jobs(self):
         """Start the threads that perform the jobs"""
@@ -97,10 +95,10 @@ class JobManager(object):
         threads = []
         for x in range(self.config["threads"]):
             threads.append(Thread(target=self.run_jobs))
+            threads[-1].daemon = True
             threads[-1].start()
 
-        for t in threads:
-            t.join()
+        self.jobs.join()
 
 
 if __name__ == "__main__":
