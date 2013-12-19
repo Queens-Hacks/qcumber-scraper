@@ -6,7 +6,7 @@ except ImportError:
     # Python 2.x
     from Queue import Queue, Empty
 
-#from navigation import SolusSession
+from navigation import SolusSession
 
 class ScrapeJob(dict):
     """
@@ -55,7 +55,7 @@ class Scraper(object):
         job = self.config["job"]
         letters = job["letters"]
 
-        threads_per_letter = (self.config["threads"] - 1)/len(letters) + 1
+        threads_per_letter = int((self.config["threads"] - 1)/len(letters) + 1)
 
         for l in letters:
             job_letter = ScrapeJob(job)
@@ -72,14 +72,15 @@ class Scraper(object):
 
         # Initialize the session
         try:
-            raise EnvironmentError("No scraper availible")
-            # TODO: Create a session and log in
-            #session = SolusSession(self.user, self.passwd)
+            session = SolusSession(self.user, self.passwd)
         except EnvironmentError as e:
             logging.critical(e)
-            # Can't log in, can't do anything
+            # Can't log in, therefore can't do any jobs
+            # As long as at least 1 of the threads can log in,
+            # the scraper will still work
             return
 
+        # Run all the jobs in the job queue
         while True:
             try:
                 job = self.jobs.get_nowait()
@@ -108,7 +109,7 @@ if __name__ == "__main__":
     config = dict(
         name = "Shallow scrape with threading",
         description = "Scrapes the entire catalog using multiple threads",
-        threads = 5,
+        threads = 1,
         job = ScrapeJob(letters="ABC", deep=False)
     )
 
