@@ -51,8 +51,8 @@ class SolusParser(object):
     def _validate_link_id(self, link_id):
         """Returns the link_id and found tag if it's found, None otherwise."""
 
-        tag = self.soup.find("a", {"id": link_id}):
-        if tag
+        tag = self.soup.find("a", {"id": link_id})
+        if tag:
             # Found it on the page, valid id
             return link_id, tag
 

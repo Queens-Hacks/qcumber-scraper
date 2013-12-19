@@ -133,19 +133,27 @@ class SolusSession(object):
     #    """Returns the subject with the specified index on the current alphanum's page, or none if the dropdown index does not exist"""
     #    return AlphanumParser(self.soup).subject_from_dropdown(subject_index)
 
-    def dropdown_subject(self, subject):
+    def dropdown_subject(self, subject_index):
         """Opens the dropdown menu for a subject"""
         if self.recovery_state < 0:
-            self.recovery_stack[1] = subject
+            self.recovery_stack[1] = subject_index
 
-        self._catalog_post(subject.click_action)
+        action = self.parser.subject_id_at_index(subject_index)
+        if not action:
+            raise Exception("Tried to drop down an invalid subject index")
 
-    def rollup_subject(self, subject):
+        self._catalog_post(action)
+
+    def rollup_subject(self, subject_index):
         """Closes the dropdown menu for a subject"""
         if self.recovery_state < 0:
             self.recovery_stack[1] = None
 
-        self._catalog_post(subject.click_action)
+        action = self.parser.subject_id_at_index(subject_index)
+        if not action:
+            raise Exception("Tried to roll up an invalid subject index")
+
+        self._catalog_post(action)
 
     # ----------------------------- Courses ------------------------------------- #
 
@@ -153,13 +161,16 @@ class SolusSession(object):
     #    """Returns whether or not a course link with the specified index exists"""
     #    return SubjectParser(self.soup).course_link_exists(course_index)
 
-    #def open_course(self, course_index):
-    #    """Opens a course page by following the course link with the supplied index"""
-    #    if self.recovery_state < 0:
-    #        self.recovery_stack[2] = course_index
-    #
-    #    action = SubjectParser(self.soup).course_link_id(course_index)
-    #    self._catalog_post(action)
+    def open_course(self, course_index):
+        """Opens a course page by following the course link with the supplied index"""
+        if self.recovery_state < 0:
+            self.recovery_stack[2] = course_index
+
+        action = self.parser.course_id_at_index(course_index)
+        if not action:
+            raise Exception("Tried to open a course with an invalid index")
+
+        self._catalog_post(action)
 
     #def current_course(self, subject):
     #    """Returns the course built from the current course page"""
@@ -189,6 +200,7 @@ class SolusSession(object):
         """Shows the sections for a given term"""
         if self.recovery_state < 0:
             self.recovery_stack[3] = term
+        # TODO: The below line /might/ be DERIVED_SAA_CRS_SSR_PB_GO$98$ now.
         self._catalog_post(action='DERIVED_SAA_CRS_SSR_PB_GO$92$', extras={'DERIVED_SAA_CRS_TERM_ALT': term.dropdown_value})
 
     #def multiple_section_pages_available(self):

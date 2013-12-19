@@ -7,6 +7,7 @@ except ImportError:
     from Queue import Queue, Empty
 
 from navigation import SolusSession
+from scraper import SolusScraper
 
 class ScrapeJob(dict):
     """
@@ -26,7 +27,7 @@ class ScrapeJob(dict):
         self["course_end"] = self.get("course_end", None)
 
 
-class Scraper(object):
+class JobManager(object):
     """Handles dividing up the scraping work and starting the scraper threads"""
 
     def __init__(self, user, passwd, config):
@@ -87,7 +88,8 @@ class Scraper(object):
             except Empty as e:
                 return
 
-            # TODO: Run the job
+            # Run the job
+            SolusScraper(session, job).start()
 
     def start_jobs(self):
         """Start the threads that perform the jobs"""
@@ -109,8 +111,8 @@ if __name__ == "__main__":
     config = dict(
         name = "Shallow scrape with threading",
         description = "Scrapes the entire catalog using multiple threads",
-        threads = 1,
-        job = ScrapeJob(letters="ABC", deep=False)
+        threads = 2,
+        job = ScrapeJob(letters="AB", deep=False)
     )
 
     # Get credientials
@@ -120,4 +122,4 @@ if __name__ == "__main__":
         logging.critical("No credientials found. Create a config.py file with SCRAPER_USER and SCRAPER_PASS constants")
 
     # Start scraping
-    Scraper(SCRAPER_USER, SCRAPER_PASS, config).start()
+    JobManager(SCRAPER_USER, SCRAPER_PASS, config).start()
