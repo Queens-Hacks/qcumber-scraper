@@ -125,7 +125,7 @@ class SolusSession(object):
         if self.recovery_state < 0:
             self.recovery_stack[0] = alphanum
 
-        self._catalog_post('DERIVED_SSS_BCC_SSR_ALPHANUM_' + alphanum.upper())
+        self._catalog_post('DERIVED_SSS_BCC_SSR_ALPHANUM_{0}'.format(alphanum.upper()))
 
     # ----------------------------- Subjects ------------------------------------- #
 

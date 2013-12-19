@@ -13,7 +13,7 @@ class SolusParser(object):
         try:
             bs4.BeautifulSoup("", self._souplib)
         except bs4.FeatureNotFound as e:
-            logging.warning("Not using {} for parsing, using builtin parser instead".format(self._souplib))
+            logging.warning("Not using {0} for parsing, using builtin parser instead".format(self._souplib))
             self._souplib = "html.parser"
 
     def update_html(self, text):

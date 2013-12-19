@@ -63,9 +63,9 @@ class JobManager(object):
             job_letter["letters"] = l
             for s in range(0, threads_per_letter):
                 temp = ScrapeJob(job_letter)
-                temp["subject_start_idx"] = s
+                temp["subject_start"] = s
                 temp["subject_step"] = threads_per_letter
-                logging.info("Made job: {}".format(temp))
+                logging.info("Made job: {0}".format(temp))
                 self.jobs.put_nowait(temp)
     
     def run_jobs(self):
