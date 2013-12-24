@@ -1,10 +1,10 @@
 import logging
-from threading import Thread
+from multiprocessing import Process, Queue
 try:
-    from queue import Queue, Empty
+    from queue import Empty
 except ImportError:
     # Python 2.x
-    from Queue import Queue, Empty
+    from Queue import Empty
 
 from navigation import SolusSession
 from scraper import SolusScraper
@@ -68,7 +68,7 @@ class JobManager(object):
                 logging.info("Made job: {0}".format(temp))
                 self.jobs.put_nowait(temp)
     
-    def run_jobs(self):
+    def run_jobs(self, queue):
         """Initialize a SOLUS session and run the jobs"""
 
         # Initialize the session
@@ -84,7 +84,7 @@ class JobManager(object):
         # Run all the jobs in the job queue
         while True:
             try:
-                job = self.jobs.get_nowait()
+                job = queue.get_nowait()
             except Empty as e:
                 return
 
@@ -96,7 +96,7 @@ class JobManager(object):
 
         threads = []
         for x in range(self.config["threads"]):
-            threads.append(Thread(target=self.run_jobs))
+            threads.append(Process(target=self.run_jobs, args=(self.jobs,)))
             threads[-1].start()
 
         for t in threads:
