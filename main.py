@@ -9,6 +9,13 @@ except ImportError:
 from navigation import SolusSession
 from scraper import SolusScraper
 
+# Get credientials
+try:
+    from config import USER, PASS, PROFILE
+except ImportError:
+    logging.critical("No credientials found. Create a config.py file with USER, PASS, and PROFILE constants")
+
+
 class ScrapeJob(dict):
     """
     Holds data on a scraper job. Includes default arguments.
@@ -89,7 +96,11 @@ class JobManager(object):
                 return
 
             # Run the job
-            SolusScraper(session, job).start()
+            if PROFILE:
+                import cProfile
+                cProfile.runctx("SolusScraper(session, job).start()", globals(), locals())
+            else:
+                SolusScraper(session, job).start()
 
     def start_jobs(self):
         """Start the threads that perform the jobs"""
@@ -115,11 +126,5 @@ if __name__ == "__main__":
         job = ScrapeJob(letters="AB", deep=False)
     )
 
-    # Get credientials
-    try:
-        from config import SCRAPER_USER, SCRAPER_PASS
-    except ImportError:
-        logging.critical("No credientials found. Create a config.py file with SCRAPER_USER and SCRAPER_PASS constants")
-
     # Start scraping
-    JobManager(SCRAPER_USER, SCRAPER_PASS, config).start()
+    JobManager(USER, PASS, config).start()
