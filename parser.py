@@ -111,11 +111,13 @@ class SolusParser(object):
     def num_subjects(self):
         """Returns the number of subjects on the page"""
         links = self.soup.find_all(id=re.compile("DERIVED_SSS_BCC_GROUP_BOX_1\$84\$\$[0-9]+"))
+        # TODO if needed: Check if ID numbers are continuous
         return len(links)
 
     def num_courses(self):
         """Returns the number of courses on the page"""
         links = self.soup.find_all(id=re.compile("CRSE_TITLE\$[0-9]+"))
+        # TODO if needed: Check if ID numbers are continuous
         return len(links)
 
     #-------------------------General-------------------------------
@@ -133,6 +135,7 @@ class SolusParser(object):
         INFO_BOX_CSS_CLASS = "PSGROUPBOXNBO"
         INFO_BOX_HEADER_CSS_CLASS = "SSSGROUPBOXLTBLUE"
         DESCRIPTION_CSS_CLASS = "PSLONGEDITBOX"
+
         EDITBOX_LABEL = "PSEDITBOXLABEL"
         EDITBOX_DATA = "PSEDITBOX_DISPONLY"
         DROPDOWN_LABEL = "PSDROPDOWNLABEL"
@@ -155,7 +158,7 @@ class SolusParser(object):
                 "Enrollment Requirement": "enrollment_requirement",
         }
 
-        attrs = {'extra': {}}
+        attrs = {'extra': {"CEAB": {}}}
 
         # Get the title and number
         title = self.soup.find("span", {"class": TITLE_CSS_CLASS})
@@ -231,8 +234,18 @@ class SolusParser(object):
 
             # Process the CEAB information
             elif box_title == CEAB:
-                # Maybe do something with these in the future?
-                pass
+
+                labels = table.find_all("label", {"class": EDITBOX_LABEL})
+                data = table.find_all("span", {"class": EDITBOX_DATA})
+
+                for x in range(0, len(labels)):
+                    # Clean up the data
+                    temp = self._clean_html(data[x].string)
+
+                    # Add the data to the dict if it exists
+                    if labels[x].string and temp:
+                        # Remove the last character of the label to remove the ":"
+                        attrs['extra']['CEAB'][labels[x].string[:-1]] = temp
 
             else:
                 raise Exception('Encountered unexpected info_box with title: "{0}"'.format(box_title))
