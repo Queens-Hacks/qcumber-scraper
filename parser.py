@@ -110,17 +110,13 @@ class SolusParser(object):
 
     def num_subjects(self):
         """Returns the number of subjects on the page"""
-        cnt = 0
-        while self.subject_id_at_index(cnt):
-            cnt += 1
-        return cnt
+        links = self.soup.find_all(id=re.compile("DERIVED_SSS_BCC_GROUP_BOX_1\$84\$\$[0-9]+"))
+        return len(links)
 
     def num_courses(self):
         """Returns the number of courses on the page"""
-        cnt = 0
-        while self.course_id_at_index(cnt):
-            cnt += 1
-        return cnt
+        links = self.soup.find_all(id=re.compile("CRSE_TITLE\$[0-9]+"))
+        return len(links)
 
     #-------------------------General-------------------------------
 
