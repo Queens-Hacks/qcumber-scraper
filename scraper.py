@@ -25,11 +25,13 @@ class SolusScraper(object):
 
             if subject_end is None:
                 subject_end = num_subjects
+            else:
+                subject_end = min(subject_end, num_subjects)
 
             for subject_index in range(subject_start, subject_end, subject_step):
                 data = self.session.parser.subject_at_index(subject_index)
 
-                logging.info("Subject: {abbreviation} - {title}".format(**data))
+                logging.info("--Subject: {abbreviation} - {title}".format(**data))
 
                 self.session.dropdown_subject(subject_index)
 
@@ -39,10 +41,18 @@ class SolusScraper(object):
                 course_end = self.job["course_end"]
                 
                 if course_end is None:
-                    course_end = num_subjects
+                    course_end = num_courses
+                else:
+                    course_end = min(course_end, num_courses)
 
                 for course_index in range(course_start, course_end):
-                    # TODO: Scraping logic
-                    pass
+                    self.session.open_course(course_index)
+
+                    course_info = self.session.parser.course_info()
+                    logging.info("----Course: {number} - {title}".format(**course_info['basic']))
+
+                    # TODO: Terms, sections, classes, deep scrape
+
+                    self.session.return_from_course()
 
                 self.session.rollup_subject(subject_index)
