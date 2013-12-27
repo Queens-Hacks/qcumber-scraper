@@ -446,5 +446,69 @@ class SolusParser(object):
         return ret
 
     def section_attrs(self):
-        """Parses out the section data from the section page. Used for deep scrapes"""
-        pass
+        """
+        Parses out the section data from the section page. Used for deep scrapes
+        Information availible on the course page (such as class times) is not recorded.
+
+        For best results, update the information from the course page with this information
+
+        Return format:
+
+        {
+            'details':{
+                'status': open/closed,
+                'session': session,
+                'location': course location,
+                'campus': course campus
+            },
+            'availability':{
+                'class_max': spaces in class,
+                'class_curr': number enrolled,
+                'wait_max': spaces on wait list,
+                'wait_curr': number waiting
+            }
+        }
+        """
+
+        TABLE_CLASS = "PSGROUPBOXWBO"
+        TABLE_HEADER_CLASS = "PAGROUPBOXLABELLEVEL1"
+        EDITBOX_LABEL_CLASS = "PSEDITBOXLABEL"
+        EDITBOX_DATA_CLASS = "PSEDITBOX_DISPONLY"
+
+        DETAIL_LABEL = "Class Details"
+        AVAILABILITY_LABEL = "Class Availability"
+
+        ret = {
+            'details': {},
+            'availability': {}
+        }
+
+        # Iterate over all tables (only need 2)
+        tables = self.soup.find_all("table", {"class": TABLE_CLASS})
+        for table in tables:
+            temp = table.find("td", {"class": TABLE_HEADER_CLASS})
+            if not temp or not temp.string:
+                # Nothing there
+                continue
+
+            elif temp.string == DETAIL_LABEL:
+                labels = table.find_all("label", {"class": EDITBOX_LABEL_CLASS})
+                data = table.find_all("span", {"class": EDITBOX_DATA_CLASS})
+                num_components = len(data) - len(labels)
+
+                # Store class attributes
+                ret['details']['status'] = data[0].string
+                ret['details']['session'] = data[2].string
+                ret['details']['location'] = data[8 + num_components].string
+                ret['details']['campus'] = data[9 + num_components].string
+
+            elif temp.string == AVAILABILITY_LABEL:
+                data = table.find_all("span", {"class": EDITBOX_DATA_CLASS})
+
+                # Store enrollment information
+                ret['availability']['class_max'] = int(data[0].string)
+                ret['availability']['wait_max'] = int(data[1].string)
+                ret['availability']['class_curr'] = int(data[2].string)
+                ret['availability']['wait_curr'] = int(data[3].string)
+
+        return ret

@@ -66,14 +66,17 @@ class SolusScraper(object):
                             section_info = self.session.parser.section_at_index(section_index)
                             logging.info("--------Section: {class_num}-{type} ({solus_id})".format(**section_info))
 
+                            section_attrs = {}
+                            section_attrs['classes'] = self.session.parser.section_attrs_at_index(section_index)
+
                             if self.job["deep"]:
                                 self.session.visit_section_page(section_index)
-                                section_class_info = self.parser.section_attrs()
-                                # TODO: Deep scrape
+
+                                # Add the new information to the section_attrs dict
+                                section_attrs.update(self.session.parser.section_attrs())
                                 self.session.return_from_section()
-                            else:
-                                section_class_info = self.session.parser.section_attrs_at_index(section_index)
-                                logging.debug("DATA DUMP: {0}".format(section_class_info))
+
+                            logging.debug("DATA DUMP: {0}".format(section_attrs))
 
                     self.session.return_from_course()
 
