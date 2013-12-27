@@ -129,10 +129,6 @@ class SolusSession(object):
 
     # ----------------------------- Subjects ------------------------------------- #
 
-    #def subject_from_dropdown(self, subject_index):
-    #    """Returns the subject with the specified index on the current alphanum's page, or none if the dropdown index does not exist"""
-    #    return AlphanumParser(self.soup).subject_from_dropdown(subject_index)
-
     def dropdown_subject(self, subject_index):
         """Opens the dropdown menu for a subject"""
         if self.recovery_state < 0:
@@ -157,10 +153,6 @@ class SolusSession(object):
 
     # ----------------------------- Courses ------------------------------------- #
 
-    #def course_link_exists(self, course_index):
-    #    """Returns whether or not a course link with the specified index exists"""
-    #    return SubjectParser(self.soup).course_link_exists(course_index)
-
     def open_course(self, course_index):
         """Opens a course page by following the course link with the supplied index"""
         if self.recovery_state < 0:
@@ -172,10 +164,6 @@ class SolusSession(object):
 
         self._catalog_post(action)
 
-    #def current_course(self, subject):
-    #    """Returns the course built from the current course page"""
-    #    return CourseParser(self.soup).current_course(subject)
-
     def return_from_course(self):
         """Navigates back from course to subject"""
         self.recovery_stack[3] = None
@@ -184,50 +172,43 @@ class SolusSession(object):
 
     # -----------------------------Sections ------------------------------------- #
 
-    #def sections_are_offered(self):
-    #    """Determines whether there is a 'View class sections' button on the page"""
-    #    return SectionParser(self.soup).sections_are_offered()
-
     def show_sections(self):
-        """Clicks on the 'View class sections' button on the course page"""
-        self._catalog_post('DERIVED_SAA_CRS_SSR_PB_GO')
+        """
+        Clicks on the 'View class sections' button on the course page if it exists
+        """
+        if self.parser._validate_id('DERIVED_SAA_CRS_SSR_PB_GO'):
+            self._catalog_post('DERIVED_SAA_CRS_SSR_PB_GO')
 
-    #def terms_offered(self):
-    #    """Returns the terms during which the current course is offered"""
-    #    return SectionParser(self.soup).terms_offered()
-
-    def switch_to_term(self, term):
-        """Shows the sections for a given term"""
+    def switch_to_term(self, solus_id):
+        """Shows the sections for the term with the specified solus_id"""
         if self.recovery_state < 0:
-            self.recovery_stack[3] = term
-        # TODO: The below line /might/ be DERIVED_SAA_CRS_SSR_PB_GO$98$ now.
-        self._catalog_post(action='DERIVED_SAA_CRS_SSR_PB_GO$92$', extras={'DERIVED_SAA_CRS_TERM_ALT': term.dropdown_value})
-
-    #def multiple_section_pages_available(self):
-    #    """Returns whether or not there is a "view all sections" button on the page"""
-    #    return SectionParser(self.soup).view_all_section_button_exists()
+            self.recovery_stack[3] = solus_id
+        self._catalog_post(action='DERIVED_SAA_CRS_SSR_PB_GO$98$', extras={'DERIVED_SAA_CRS_TERM_ALT': solus_id})
 
     def view_all_sections(self):
-        """Presses the "view all sections" link on the course page"""
-        self._catalog_post('CLASS_TBL_VW5$fviewall$0')
+        """Presses the "view all sections" link on the course page if needed"""
+        if self.parser._validate_id('CLASS_TBL_VW5$fviewall$0'):
+            self._catalog_post('CLASS_TBL_VW5$fviewall$0')
 
-    #def current_sections(self, course, term):
-    #    """Returns all sections visible on the current course page"""
-    #    return SectionParser(self.soup).current_sections(course, term)
-
-    def visit_section_page(self, section):
-        """Opens the dedicated page for the provided section"""
+    def visit_section_page(self, section_index):
+        """
+        Opens the dedicated page for the provided section.
+        Used for deep scrapes
+        """
         if self.recovery_state < 0:
-            self.recovery_stack[4] = section
+            self.recovery_stack[4] = section_index
 
-        self._catalog_post(section.click_action)
+        action = self.parser.section_id_at_index(section_index)
+        if not action:
+            raise Exception("Tried to open a section with an invalid index")
 
-    #def scrape_section_page(self, section):
-    #    """Adds the information available on the dedicated section page to the provided section"""
-    #    return SectionParser(self.soup).add_section_page_attributes(section)
+        self._catalog_post(action)
 
     def return_from_section(self):
-        """Navigates back from section to course"""
+        """
+        Navigates back from section to course.
+        Used for deep scrapes
+        """
         self.recovery_stack[4] = None
         self._catalog_post('CLASS_SRCH_WRK2_SSR_PB_CLOSE')
 

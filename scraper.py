@@ -36,7 +36,7 @@ class SolusScraper(object):
                 self.session.dropdown_subject(subject_index)
 
                 num_courses = self.session.parser.num_courses()
-                
+
                 course_start = self.job["course_start"]
                 course_end = self.job["course_end"]
                 
@@ -48,10 +48,32 @@ class SolusScraper(object):
                 for course_index in range(course_start, course_end):
                     self.session.open_course(course_index)
 
-                    course_info = self.session.parser.course_info()
-                    logging.info("----Course: {number} - {title}".format(**course_info['basic']))
+                    course_attrs = self.session.parser.course_attrs()
+                    logging.info("----Course: {number} - {title}".format(**course_attrs['basic']))
+                    logging.debug("DATA DUMP: {0}".format(course_attrs['extra']))
 
-                    # TODO: Terms, sections, classes, deep scrape
+                    self.session.show_sections()
+
+                    terms = self.session.parser.all_terms()
+                    for term in terms:
+                        logging.info("------Term: {year} - {season}".format(**term))
+                        self.session.switch_to_term(term['solus_id'])
+                        self.session.view_all_sections()
+
+                        num_sections = self.session.parser.num_sections()
+
+                        for section_index in range(0, num_sections):
+                            section_info = self.session.parser.section_at_index(section_index)
+                            logging.info("--------Section: {class_num}-{type} ({solus_id})".format(**section_info))
+
+                            if self.job["deep"]:
+                                self.session.visit_section_page(section_index)
+                                section_class_info = self.parser.section_attrs()
+                                # TODO: Deep scrape
+                                self.session.return_from_section()
+                            else:
+                                section_class_info = self.session.parser.section_attrs_at_index(section_index)
+                                logging.debug("DATA DUMP: {0}".format(section_class_info))
 
                     self.session.return_from_course()
 

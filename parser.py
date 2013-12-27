@@ -46,12 +46,12 @@ class SolusParser(object):
 
         return dict(url=url, payload=payload)
 
-    #------------------Get IDs/objects by index---------------------
+    #------------------Get IDs by index--------------------------
 
-    def _validate_link_id(self, link_id):
+    def _validate_id(self, link_id, tag_type="a"):
         """Returns the link_id and found tag if it's found, None otherwise."""
 
-        tag = self.soup.find("a", {"id": link_id})
+        tag = self.soup.find(tag_type, {"id": link_id})
         if tag:
             # Found it on the page, valid id
             return link_id, tag
@@ -69,9 +69,61 @@ class SolusParser(object):
         link_format = "DERIVED_SSS_BCC_GROUP_BOX_1$84$${0}"
 
         if return_tag:
-            return self._validate_link_id(link_format.format(index))
+            return self._validate_id(link_format.format(index))
         else:
-            return self._validate_link_id(link_format.format(index))[0]
+            return self._validate_id(link_format.format(index))[0]
+
+    def course_id_at_index(self, index):
+        """
+        Returns the id of the course at the specified index on the page.
+        None if the course doesn't exist.
+        """
+
+        # General format of all course links
+        link_format = "CRSE_TITLE${0}"
+
+        return self._validate_id(link_format.format(index))[0]
+
+    def section_id_at_index(self, index, return_tag=False):
+        """
+        Returns the id of the section at the specified index on the page.
+        None if it doesn't exist.
+        """
+
+        # General format of all section links
+        link_format = "CLASS_SECTION${0}"
+
+        if return_tag:
+            return self._validate_id(link_format.format(index))
+        else:
+            return self._validate_id(link_format.format(index))[0]
+
+    #---------------------------Counting------------------------
+
+    def num_subjects(self):
+        """Returns the number of subjects on the page"""
+        links = self.soup.find_all(id=re.compile("DERIVED_SSS_BCC_GROUP_BOX_1\$84\$\$[0-9]+"))
+        # TODO if needed: Check if ID numbers are continuous
+        return len(links)
+
+    def num_courses(self):
+        """Returns the number of courses on the page"""
+        links = self.soup.find_all(id=re.compile("CRSE_TITLE\$[0-9]+"))
+        # TODO if needed: Check if ID numbers are continuous
+        return len(links)
+
+    def num_sections(self):
+        """Returns the number of sections on the page"""
+        links = self.soup.find_all(id=re.compile("CLASS_SECTION\$[0-9]+"))
+        # TODO if needed: Check if ID numbers are continuous
+        return len(links)
+
+    #-------------------------General-------------------------------
+
+    def _clean_html(self, text):
+        return text.replace('&nbsp;',' ').strip()
+
+    #----------------------Subject info-----------------------------
 
     def subject_at_index(self, index):
         """
@@ -95,40 +147,34 @@ class SolusParser(object):
 
         return dict(title=subject_title, abbreviation=subject_abbr, action=link_id)
 
-    def course_id_at_index(self, index):
-        """
-        Returns the id of the course at the specified index on the page.
-        None if the course doesn't exist.
-        """
-
-        # General format of all course links
-        link_format = "CRSE_TITLE${0}"
-
-        return self._validate_link_id(link_format.format(index))[0]
-
-    #---------------------------Counting------------------------
-
-    def num_subjects(self):
-        """Returns the number of subjects on the page"""
-        links = self.soup.find_all(id=re.compile("DERIVED_SSS_BCC_GROUP_BOX_1\$84\$\$[0-9]+"))
-        # TODO if needed: Check if ID numbers are continuous
-        return len(links)
-
-    def num_courses(self):
-        """Returns the number of courses on the page"""
-        links = self.soup.find_all(id=re.compile("CRSE_TITLE\$[0-9]+"))
-        # TODO if needed: Check if ID numbers are continuous
-        return len(links)
-
-    #-------------------------General-------------------------------
-
-    def _clean_html(self, text):
-        return text.replace('&nbsp;',' ').strip()
 
     #-----------------------Course info-----------------------------
 
-    def course_info(self):
-        """Parses the course attributes out of the page"""
+    def course_attrs(self):
+        """Parses the course attributes out of the page
+
+        Return format:
+
+        {
+            'basic':{
+                'title': course title,
+                'number': course number,
+                'description: course description,
+            }
+            'extra':{
+                # All keys in `KEYMAP` are valid in here (direct mapping)
+                # course_components is a special case
+                'course_components':{
+                    # Example
+                    'Lecture': 'Required',
+                }
+                "CEAB":{
+                    # Example
+                    'Math': '30',
+                }
+            }
+        }
+        """
 
         TITLE_CSS_CLASS = "PALEVEL0SECONDARY"
         INFO_TABLE_CSS_CLASS = "SSSGROUPBOXLTBLUEWBO"
@@ -148,14 +194,14 @@ class SolusParser(object):
         CEAB = "CEAB Units"
 
         KEYMAP = {
-                "Career": "career",
-                "Typically Offered": "typically_offered",
-                "Units": "units",
-                "Grading Basis": "grading_basis",
-                "Add Consent": "add_consent",
-                "Drop Consent": "drop_consent",
-                "Course Components": "course_components",
-                "Enrollment Requirement": "enrollment_requirement",
+            "Career": "career",
+            "Typically Offered": "typically_offered",
+            "Units": "units",
+            "Grading Basis": "grading_basis",
+            "Add Consent": "add_consent",
+            "Drop Consent": "drop_consent",
+            "Course Components": "course_components",
+            "Enrollment Requirement": "enrollment_requirement",
         }
 
         attrs = {'extra': {"CEAB": {}}}
@@ -173,7 +219,7 @@ class SolusParser(object):
         attrs['basic'] = {
             'title' : m.group(3),
             'number' : m.group(2),
-            'description' : "",
+            'description' : ""
         }
 
         # Blue table with info, enrollment, and description
@@ -251,3 +297,144 @@ class SolusParser(object):
                 raise Exception('Encountered unexpected info_box with title: "{0}"'.format(box_title))
 
         return attrs
+
+    #---------------------------Term info-----------------------------
+
+    def all_terms(self):
+        """
+        Returns a list of dicts containing term data in the current course.
+        Returns an empty list if the class isn't scheduled
+        """
+
+        DROPDOWN_ID = "DERIVED_SAA_CRS_TERM_ALT"
+
+        ret = []
+        term_sel = self.soup.find("select", id=DROPDOWN_ID)
+
+        # Check if class is scheduled
+        if term_sel:
+            for x in term_sel.find_all("option"):
+                m = re.search('^([^\s]+) (.+)$', x.string)
+                if m:
+                    ret.append(dict(solus_id=x['value'], year=m.group(1), season=m.group(2)))
+
+        return ret
+
+
+    #----------------------------------Section info------------------------------------
+
+    def section_at_index(self, index):
+        """
+        Returns the `class_num`, `solus_id`, and `type` of the section
+        at the specified index on the page
+        None if it doesn't exist
+        """
+
+        # Get the tag at the index
+        link_id, tag = self.section_id_at_index(index, return_tag=True)
+        if not tag:
+            return None
+
+        # Extract the subject title and abbreviation
+        m = re.search('(\S+)-(\S+)\s+\((\S+)\)', tag.string)
+        if not m:
+            logging.debug("Couldn't extract section information from the page")
+            return None
+
+        return dict(class_num=m.group(3), solus_id=m.group(1), type=m.group(2))
+
+    def section_attrs_at_index(self, index):
+        """
+        Returns a list containing class information for the specified section index on the page.
+
+        Used for shallow scrapes.
+
+        Return format:
+        [{
+            'day_of_week': 1-7, starting with monday
+            'start_time': datetime object
+            'end_time': datetime object
+            'location': room
+            'instructors': [instructor names]
+            'term_start': datetime object
+            'term_end': datetime object
+        },]
+        """
+
+        # Map the strings to numeric days
+        DAY_MAP = {
+            "mo": 1,
+            "tu": 2,
+            "we": 3,
+            "th": 4,
+            "fr": 5,
+            "sa": 6,
+            "su": 7
+        }
+
+        TABLE_FORMAT = "CLASS_MTGPAT$scroll${0}"
+        CELLS = "PSEDITBOX_DISPONLY"
+        INSTRUCTOR_CELLS = "PSLONGEDITBOX"
+        NON_INSTRUCTORS = ("TBA", "Staff")
+
+        data_table = self._validate_id(TABLE_FORMAT.format(index), tag_type="table")[1]
+        if not data_table:
+            raise Exception("Invalid section index passed to `section_info_at_index`")
+
+        # Get the needed cells
+        cells = data_table.find_all("span", {"class": CELLS})
+        inst_cells = data_table.find_all("span", {"class": INSTRUCTOR_CELLS})
+
+        # Deal with bad formatting
+        values = [self._clean_html(x.string) for x in cells]
+
+        # Iterate over all the classes
+        ret = []
+        for x in range(0, len(values), 5):
+
+            # Instructors
+            temp_inst = inst_cells[x//5].string
+            instructors = []
+            if temp_inst and temp_inst not in NON_INSTRUCTORS:
+                lis = re.sub(r'\s+', ' ', temp_inst).split(",")
+                for i in range(0, len(lis), 2):
+                    last_name = lis[i].strip()
+                    other_names = lis[i+1].strip()
+                    instructors.append("{0}, {1}".format(last_name, other_names))
+
+            # Location
+            location = values[x+3]
+
+            # Class start/end times
+            m = re.search("(\d+:\d+[AP]M)", values[x+1])
+            start_time = datetime.strptime(m.group(1), "%I:%M%p") if m else None
+            m = re.search("(\d+:\d+[AP]M)", values[x+2])
+            end_time = datetime.strptime(m.group(1), "%I:%M%p") if m else None
+
+            # Class start/end dates
+            m = re.search('^([\S]+)\s*-\s*([\S]+)$', values[x+4])
+            term_start = datetime.strptime(m.group(1), "%Y/%m/%d") if m else None
+            term_end = datetime.strptime(m.group(2), "%Y/%m/%d") if m else None
+
+            # Loop through all days
+            all_days = values[x+0].lower()
+            while len(all_days) > 0:
+                day_abbr = all_days[-2:]
+                all_days = all_days[:-2]
+
+                if day_abbr in DAY_MAP:
+                    ret.append({
+                        'day_of_week': DAY_MAP[day_abbr],
+                        'start_time': start_time,
+                        'end_time': end_time,
+                        'location': location,
+                        'instructors': instructors,
+                        'term_start': term_start,
+                        'term_end': term_end
+                    })
+
+        return ret
+
+    def section_attrs(self):
+        """Parses out the section data from the section page. Used for deep scrapes"""
+        pass
