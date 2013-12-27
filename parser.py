@@ -176,16 +176,16 @@ class SolusParser(object):
         }
         """
 
-        TITLE_CSS_CLASS = "PALEVEL0SECONDARY"
-        INFO_TABLE_CSS_CLASS = "SSSGROUPBOXLTBLUEWBO"
-        INFO_BOX_CSS_CLASS = "PSGROUPBOXNBO"
-        INFO_BOX_HEADER_CSS_CLASS = "SSSGROUPBOXLTBLUE"
-        DESCRIPTION_CSS_CLASS = "PSLONGEDITBOX"
+        TITLE_CLASS = "PALEVEL0SECONDARY"
+        INFO_TABLE_CLASS = "SSSGROUPBOXLTBLUEWBO"
+        INFO_BOX_CLASS = "PSGROUPBOXNBO"
+        INFO_BOX_HEADER_CLASS = "SSSGROUPBOXLTBLUE"
+        DESCRIPTION_CLASS = "PSLONGEDITBOX"
 
-        EDITBOX_LABEL = "PSEDITBOXLABEL"
-        EDITBOX_DATA = "PSEDITBOX_DISPONLY"
-        DROPDOWN_LABEL = "PSDROPDOWNLABEL"
-        DROPDOWN_DATA = "PSDROPDOWNLIST_DISPONLY"
+        EDITBOX_LABEL_CLASS = "PSEDITBOXLABEL"
+        EDITBOX_DATA_CLASS = "PSEDITBOX_DISPONLY"
+        DROPDOWN_LABEL_CLASS = "PSDROPDOWNLABEL"
+        DROPDOWN_DATA_CLASS = "PSDROPDOWNLIST_DISPONLY"
 
         DESCRIPTION = "Description"
         COURSE_DETAIL = "Course Detail"
@@ -204,10 +204,14 @@ class SolusParser(object):
             "Enrollment Requirement": "enrollment_requirement",
         }
 
-        attrs = {'extra': {"CEAB": {}}}
+        ret = {
+            'extra':{
+                'CEAB':{}
+            }
+        }
 
         # Get the title and number
-        title = self.soup.find("span", {"class": TITLE_CSS_CLASS})
+        title = self.soup.find("span", {"class": TITLE_CLASS})
         if not title:
             raise Exception("Could not find the course title to parse")
 
@@ -216,21 +220,21 @@ class SolusParser(object):
         if not m:
             raise Exception("Title found ({0}) didn't match regular expression".format(temp))
 
-        attrs['basic'] = {
+        ret['basic'] = {
             'title' : m.group(3),
             'number' : m.group(2),
             'description' : ""
         }
 
         # Blue table with info, enrollment, and description
-        info_table = self.soup.find("table", {"class": INFO_TABLE_CSS_CLASS})
+        info_table = self.soup.find("table", {"class": INFO_TABLE_CLASS})
 
         # Look through inner tables
-        info_boxes = self.soup.find_all("table", {"class": INFO_BOX_CSS_CLASS})
+        info_boxes = self.soup.find_all("table", {"class": INFO_BOX_CLASS})
         for table in info_boxes:
 
             # Get the table type
-            temp = table.find("td", {"class": INFO_BOX_HEADER_CSS_CLASS})
+            temp = table.find("td", {"class": INFO_BOX_HEADER_CLASS})
             if not temp or not temp.string:
                 # Nothing there
                 continue
@@ -239,33 +243,33 @@ class SolusParser(object):
 
             # Process the description box
             if box_title == DESCRIPTION:
-                desc_list = table.find("span", {"class": DESCRIPTION_CSS_CLASS}).contents
+                desc_list = table.find("span", {"class": DESCRIPTION_CLASS}).contents
                 if desc_list:
                     # If not x.string, it means it's a <br/> Tag
-                    attrs['basic']['description'] = "\n".join([x for x in desc_list if x.string])
+                    ret['basic']['description'] = "\n".join([x for x in desc_list if x.string])
 
             # Process the course details and enrollment info
             elif box_title in (COURSE_DETAIL, ENROLL_INFO):
 
                 # Labels and values for "Add/Drop Consent" (enroll), "Career" (course), and "Grading Basis" (course)
-                labels = table.find_all("label", {"class": DROPDOWN_LABEL})
-                data = table.find_all("span", {"class": DROPDOWN_DATA})
+                labels = table.find_all("label", {"class": DROPDOWN_LABEL_CLASS})
+                data = table.find_all("span", {"class": DROPDOWN_DATA_CLASS})
 
                 if box_title == ENROLL_INFO:
                     # Labels and values for "Typically Offered", "Enrollment Requirement",
-                    labels += table.find_all("label", {"class": EDITBOX_LABEL})
-                    data += table.find_all("span", {"class": EDITBOX_DATA})
+                    labels += table.find_all("label", {"class": EDITBOX_LABEL_CLASS})
+                    data += table.find_all("span", {"class": EDITBOX_DATA_CLASS})
 
-                # Add all the type -> value mappings to the attrs dict
+                # Add all the type -> value mappings to the ret dict
                 for x in range(0, len(labels)):
                     if labels[x].string in KEYMAP:
-                        attrs['extra'][KEYMAP[labels[x].string]] = data[x].get_text()
+                        ret['extra'][KEYMAP[labels[x].string]] = data[x].get_text()
 
                 # Special case for course detail, "Units" and "Course Components"
                 if box_title == COURSE_DETAIL:
                     # Units and course components
-                    labels = table.find_all("label", {"class": EDITBOX_LABEL})
-                    data = table.find_all("span", {"class": EDITBOX_DATA})
+                    labels = table.find_all("label", {"class": EDITBOX_LABEL_CLASS})
+                    data = table.find_all("span", {"class": EDITBOX_DATA_CLASS})
                     for x in range(0, len(labels)):
                         if labels[x].string == COURSE_COMPS:
                             # Last datafield, has multiple type -> value mappings
@@ -273,30 +277,33 @@ class SolusParser(object):
                             for i in range(x, len(data), 2):
                                 comp_map[data[i].string] = data[i+1].get_text()
 
-                            attrs['extra'][KEYMAP[labels[x].string]] = comp_map
+                            ret['extra'][KEYMAP[labels[x].string]] = comp_map
                             break
                         elif labels[x].string in KEYMAP:
-                            attrs['extra'][KEYMAP[labels[x].string]] = data[x].get_text()
+                            ret['extra'][KEYMAP[labels[x].string]] = data[x].get_text()
 
             # Process the CEAB information
             elif box_title == CEAB:
 
-                labels = table.find_all("label", {"class": EDITBOX_LABEL})
-                data = table.find_all("span", {"class": EDITBOX_DATA})
+                labels = table.find_all("label", {"class": EDITBOX_LABEL_CLASS})
+                data = table.find_all("span", {"class": EDITBOX_DATA_CLASS})
 
                 for x in range(0, len(labels)):
-                    # Clean up the data
-                    temp = self._clean_html(data[x].string)
+                    try:
+                        # Clean up the data
+                        temp = int(self._clean_html(data[x].string))
+                    except (TypeError, ValueError) as e:
+                        temp = 0
 
                     # Add the data to the dict if it exists
-                    if labels[x].string and temp:
+                    if labels[x].string:
                         # Remove the last character of the label to remove the ":"
-                        attrs['extra']['CEAB'][labels[x].string[:-1]] = temp
+                        ret['extra']['CEAB'][labels[x].string[:-1]] = temp
 
             else:
                 raise Exception('Encountered unexpected info_box with title: "{0}"'.format(box_title))
 
-        return attrs
+        return ret
 
     #---------------------------Term info-----------------------------
 
@@ -350,15 +357,17 @@ class SolusParser(object):
         Used for shallow scrapes.
 
         Return format:
-        [{
-            'day_of_week': 1-7, starting with monday
-            'start_time': datetime object
-            'end_time': datetime object
-            'location': room
-            'instructors': [instructor names]
-            'term_start': datetime object
-            'term_end': datetime object
-        },]
+        [
+            {
+                'day_of_week': 1-7, starting with monday
+                'start_time': datetime object
+                'end_time': datetime object
+                'location': room
+                'instructors': [instructor names]
+                'term_start': datetime object
+                'term_end': datetime object
+            },
+        ]
         """
 
         # Map the strings to numeric days
@@ -372,18 +381,19 @@ class SolusParser(object):
             "su": 7
         }
 
-        TABLE_FORMAT = "CLASS_MTGPAT$scroll${0}"
-        CELLS = "PSEDITBOX_DISPONLY"
-        INSTRUCTOR_CELLS = "PSLONGEDITBOX"
+        TABLE_ID = "CLASS_MTGPAT$scroll${0}"
+        CELL_CLASS = "PSEDITBOX_DISPONLY"
+        INSTRUCTOR_CELL_CLASS = "PSLONGEDITBOX"
+
         NON_INSTRUCTORS = ("TBA", "Staff")
 
-        data_table = self._validate_id(TABLE_FORMAT.format(index), tag_type="table")[1]
+        data_table = self._validate_id(TABLE_ID.format(index), tag_type="table")[1]
         if not data_table:
             raise Exception("Invalid section index passed to `section_info_at_index`")
 
         # Get the needed cells
-        cells = data_table.find_all("span", {"class": CELLS})
-        inst_cells = data_table.find_all("span", {"class": INSTRUCTOR_CELLS})
+        cells = data_table.find_all("span", {"class": CELL_CLASS})
+        inst_cells = data_table.find_all("span", {"class": INSTRUCTOR_CELL_CLASS})
 
         # Deal with bad formatting
         values = [self._clean_html(x.string) for x in cells]
