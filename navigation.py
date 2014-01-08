@@ -1,6 +1,5 @@
 import logging
 import ssl
-import bs4
 import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.poolmanager import PoolManager
