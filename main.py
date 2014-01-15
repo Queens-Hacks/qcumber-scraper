@@ -116,7 +116,8 @@ class JobManager(object):
 
 if __name__ == "__main__":
 
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
+    logging.getLogger("requests").setLevel(logging.WARNING)
 
     # Testing
     config = dict(
