@@ -73,7 +73,7 @@ class SolusScraper(object):
 
             course_attrs = self.session.parser.course_attrs()
             logging.info("----Course: {number} - {title}".format(**course_attrs['basic']))
-            logging.debug("DATA DUMP: {0}".format(course_attrs['extra']))
+            logging.debug("COURSE DATA DUMP: {0}".format(course_attrs['extra']))
 
             self.session.show_sections()
 
@@ -113,4 +113,4 @@ class SolusScraper(object):
                 section_attrs.update(self.session.parser.section_attrs())
                 self.session.return_from_section()
 
-            logging.debug("DATA DUMP: {0}".format(section_attrs))
+            logging.debug("SECTION DATA DUMP: {0}".format(section_attrs))

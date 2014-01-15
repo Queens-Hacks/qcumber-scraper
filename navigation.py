@@ -121,71 +121,81 @@ class SolusSession(object):
 
     def select_alphanum(self, alphanum):
         """Navigates to a letter/number"""
+        logging.debug("Selecting letter {0}".format(alphanum))
+        self._catalog_post('DERIVED_SSS_BCC_SSR_ALPHANUM_{0}'.format(alphanum.upper()))
+
         if self.recovery_state < 0:
             self.recovery_stack[0] = alphanum
-
-        self._catalog_post('DERIVED_SSS_BCC_SSR_ALPHANUM_{0}'.format(alphanum.upper()))
 
     # ----------------------------- Subjects ------------------------------------- #
 
     def dropdown_subject(self, subject_index):
         """Opens the dropdown menu for a subject"""
+        logging.debug("Dropping down subject {0}".format(subject_index))
+        action = self.parser.subject_id_at_index(subject_index)
+        if not action:
+            raise Exception("Tried to drop down an invalid subject index {0}".format(subject_index))
+
+        self._catalog_post(action)
+
         if self.recovery_state < 0:
             self.recovery_stack[1] = subject_index
 
-        action = self.parser.subject_id_at_index(subject_index)
-        if not action:
-            raise Exception("Tried to drop down an invalid subject index")
-
-        self._catalog_post(action)
-
     def rollup_subject(self, subject_index):
         """Closes the dropdown menu for a subject"""
-        if self.recovery_state < 0:
-            self.recovery_stack[1] = None
+        logging.debug("Rolling up subject {0}".format(subject_index))
 
         action = self.parser.subject_id_at_index(subject_index)
         if not action:
-            raise Exception("Tried to roll up an invalid subject index")
+            raise Exception("Tried to roll up an invalid subject index {0}".format(subject_index))
 
         self._catalog_post(action)
+
+        if self.recovery_state < 0:
+            self.recovery_stack[1] = None
 
     # ----------------------------- Courses ------------------------------------- #
 
     def open_course(self, course_index):
         """Opens a course page by following the course link with the supplied index"""
-        if self.recovery_state < 0:
-            self.recovery_stack[2] = course_index
+        logging.debug("Open course {0}".format(course_index))
 
         action = self.parser.course_id_at_index(course_index)
         if not action:
-            raise Exception("Tried to open a course with an invalid index")
+            raise Exception("Tried to open a course with an invalid index {0}".format(course_index))
 
         self._catalog_post(action)
 
+        if self.recovery_state < 0:
+            self.recovery_stack[2] = course_index
+
     def return_from_course(self):
         """Navigates back from course to subject"""
+        logging.debug("Returning from a course")
+        self._catalog_post('DERIVED_SAA_CRS_RETURN_PB')
+
         self.recovery_stack[3] = None
         self.recovery_stack[2] = None
-        self._catalog_post('DERIVED_SAA_CRS_RETURN_PB')
 
     # -----------------------------Sections ------------------------------------- #
 
     def show_sections(self):
-        """
-        Clicks on the 'View class sections' button on the course page if it exists
-        """
+        """Clicks on the 'View class sections' button on the course page if it exists"""
+        logging.debug("Pressing the 'View class sections' button")
         if self.parser._validate_id('DERIVED_SAA_CRS_SSR_PB_GO'):
             self._catalog_post('DERIVED_SAA_CRS_SSR_PB_GO')
 
     def switch_to_term(self, solus_id):
         """Shows the sections for the term with the specified solus_id"""
+        logging.debug("Switching to term {0}".format(solus_id))
+        self._catalog_post(action='DERIVED_SAA_CRS_SSR_PB_GO$98$', extras={'DERIVED_SAA_CRS_TERM_ALT': solus_id})
+
         if self.recovery_state < 0:
             self.recovery_stack[3] = solus_id
-        self._catalog_post(action='DERIVED_SAA_CRS_SSR_PB_GO$98$', extras={'DERIVED_SAA_CRS_TERM_ALT': solus_id})
 
     def view_all_sections(self):
         """Presses the "view all sections" link on the course page if needed"""
+        logging.debug("Viewing all sections")
         if self.parser._validate_id('CLASS_TBL_VW5$fviewall$0'):
             self._catalog_post('CLASS_TBL_VW5$fviewall$0')
 
@@ -194,8 +204,7 @@ class SolusSession(object):
         Opens the dedicated page for the provided section.
         Used for deep scrapes
         """
-        if self.recovery_state < 0:
-            self.recovery_stack[4] = section_index
+        logging.debug("Visiting section page for section {0}".format(section_index))
 
         action = self.parser.section_id_at_index(section_index)
         if not action:
@@ -203,14 +212,17 @@ class SolusSession(object):
 
         self._catalog_post(action)
 
+        if self.recovery_state < 0:
+            self.recovery_stack[4] = section_index
+
     def return_from_section(self):
         """
         Navigates back from section to course.
         Used for deep scrapes
         """
-        self.recovery_stack[4] = None
+        logging.debug("Returning from section page")
         self._catalog_post('CLASS_SRCH_WRK2_SSR_PB_CLOSE')
-
+        self.recovery_stack[4] = None
 
     # -----------------------------General Purpose------------------------------------- #
 
@@ -228,8 +240,10 @@ class SolusSession(object):
         # The parser requires an update
         self._update_parser = True
 
-    def _catalog_post(self, action, extras={}):
+    def _catalog_post(self, action, extras=None):
         """Submits a post request to the site"""
+        if extras is None:
+            extras = {}
         extras['ICAction'] = action
         self._post(self.course_catalog_url, data=extras)
 
@@ -240,10 +254,10 @@ class SolusSession(object):
 
         # TESTING - Fake a DIE using random number generator
         #elif action != "" and random.random() < 0.1:
-        #    self._catalog_post("")
+        #    self._get(self.course_catalog_url)
         #    self._recover(action, extras)
 
-    def _recover(self, action, extras={}):
+    def _recover(self, action, extras):
         """Attempts to recover the scraper state after encountering an error"""
 
         # Don't recurse, retry
@@ -253,7 +267,7 @@ class SolusSession(object):
             return
 
         # Number of non-null elements in the recovery stack
-        num_states = len(filter(None, self.recovery_stack))
+        num_states = len(self.recovery_stack) - self.recovery_stack.count(None)
 
         # Start recovery process
         logging.warning("Encounted SOLUS Data Integrety Error, attempting to recover")
@@ -266,24 +280,20 @@ class SolusSession(object):
 
             # State numbers are OBO due to previous increment
             if self.recovery_state == 1:
-                logging.info("--Selecting letter {0}".format(self.recovery_stack[0]))
                 self.select_alphanum(self.recovery_stack[0])
             elif self.recovery_state == 2:
-                logging.info("----Selecting subject {0}".format(self.recovery_stack[1]))
                 self.dropdown_subject(self.recovery_stack[1])
             elif self.recovery_state == 3:
-                logging.info("------Selecting course number {0}".format(self.recovery_stack[2]))
                 self.open_course(self.recovery_stack[2])
                 self.show_sections()
             elif self.recovery_state == 4:
-                logging.info("--------Selecting term {0}".format(self.recovery_stack[3]))
                 self.switch_to_term(self.recovery_stack[3])
+                self.view_all_sections()
             elif self.recovery_state == 5:
-                logging.info("----------Selecting section {0}".format(self.recovery_stack[4]))
                 self.visit_section_page(self.recovery_stack[4])
 
         # Finished recovering
         self.recovery_state = -1
-        logging.info("Recovered, retrying original request")
+        logging.warning("Recovered, retrying original request")
 
         self._catalog_post(action, extras)

@@ -1,6 +1,7 @@
 import re
 import bs4
 from datetime import datetime
+import logging
 
 class SolusParser(object):
     """Parses SOLUS's crappy HTML"""
@@ -19,6 +20,12 @@ class SolusParser(object):
     def update_html(self, text):
         """Feed new data to the parser"""
         self.soup = bs4.BeautifulSoup(text, self._souplib)
+
+    def dump_html(self):
+        """Dumps the contents of the parser to a file"""
+        logging.critical("Encountered exception, dumping the HTML")
+        with open("temp.html", "w") as f:
+            f.write(self.soup.prettify())
 
     #-----------------------Logins----------------------------
 
@@ -139,7 +146,7 @@ class SolusParser(object):
         # Extract the subject title and abbreviation
         m = re.search("^([^-]*) - (.*)$", self._clean_html(tag.get_text()))
         if not m:
-            logging.debug("Couldn't extract title and abbreviation from dropdown")
+            logging.warning("Couldn't extract title and abbreviation from dropdown")
             return None
 
         subject_abbr = m.group(1)
@@ -340,12 +347,13 @@ class SolusParser(object):
         # Get the tag at the index
         link_id, tag = self.section_id_at_index(index, return_tag=True)
         if not tag:
+            logging.warning("Couldn't find the section at the specified index")
             return None
 
         # Extract the subject title and abbreviation
         m = re.search('(\S+)-(\S+)\s+\((\S+)\)', tag.string)
         if not m:
-            logging.debug("Couldn't extract section information from the page")
+            logging.warning("Couldn't extract section information from the page")
             return None
 
         return dict(class_num=m.group(3), solus_id=m.group(1), type=m.group(2))
