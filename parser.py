@@ -55,10 +55,13 @@ class SolusParser(object):
 
     #------------------Get IDs by index--------------------------
 
-    def _validate_id(self, link_id, tag_type="a"):
+    def _validate_id(self, link_id, tag_type="a", top_tag=None):
         """Returns the link_id and found tag if it's found, None otherwise."""
 
-        tag = self.soup.find(tag_type, {"id": link_id})
+        if top_tag is None:
+            top_tag = self.soup
+
+        tag = top_tag.find(tag_type, {"id": link_id})
         if tag:
             # Found it on the page, valid id
             return link_id, tag
@@ -91,7 +94,7 @@ class SolusParser(object):
 
         return self._validate_id(link_format.format(index))[0]
 
-    def section_id_at_index(self, index, return_tag=False):
+    def section_id_at_index(self, index, return_tag=False, top_tag=None):
         """
         Returns the id of the section at the specified index on the page.
         None if it doesn't exist.
@@ -101,9 +104,9 @@ class SolusParser(object):
         link_format = "CLASS_SECTION${0}"
 
         if return_tag:
-            return self._validate_id(link_format.format(index))
+            return self._validate_id(link_format.format(index), top_tag=top_tag)
         else:
-            return self._validate_id(link_format.format(index))[0]
+            return self._validate_id(link_format.format(index), top_tag=top_tag)[0]
 
     #---------------------------Counting------------------------
 
@@ -337,7 +340,7 @@ class SolusParser(object):
 
     #----------------------------------Section info------------------------------------
 
-    def section_at_index(self, index):
+    def section_link_at_index(self, table_tag, index):
         """
         Returns the `class_num`, `solus_id`, and `type` of the section
         at the specified index on the page
@@ -345,7 +348,7 @@ class SolusParser(object):
         """
 
         # Get the tag at the index
-        link_id, tag = self.section_id_at_index(index, return_tag=True)
+        link_id, tag = self.section_id_at_index(index, return_tag=True, top_tag=table_tag)
         if not tag:
             logging.warning("Couldn't find the section at the specified index")
             return None
@@ -357,6 +360,34 @@ class SolusParser(object):
             return None
 
         return dict(class_num=m.group(3), solus_id=m.group(1), type=m.group(2))
+
+    def section_at_index(self, index):
+        """
+        Returns the `class_num`, `solus_id`, `type`, and `status` (open/closed)
+        of the section at the specified index on the page
+        None if it doesn't exist
+        """
+
+        TABLE_ID = "CLASS$scroll${0}"
+        table_id, table_tag = self._validate_id(TABLE_ID.format(index), tag_type="table")
+
+        if table_tag is None:
+            logging.warning("Couldn't find the section at the specified index")
+            return None
+
+        # Get the section link information
+        data = self.section_link_at_index(table_tag, index)
+
+        # Get the open/closed status
+        stats = ("Open", "Closed")
+        for status in stats:
+            if table_tag.find("img", alt=status):
+                data["status"] = status
+                break
+        else:
+            logging.warning("Couldn't find open/closed status on shallow scrape")
+
+        return data
 
     def section_attrs_at_index(self, index):
         """
@@ -464,7 +495,6 @@ class SolusParser(object):
 
         {
             'details':{
-                'status': open/closed,
                 'session': session,
                 'location': course location,
                 'campus': course campus
@@ -505,7 +535,6 @@ class SolusParser(object):
                 num_components = len(data) - len(labels)
 
                 # Store class attributes
-                ret['details']['status'] = data[0].string
                 ret['details']['session'] = data[2].string
                 ret['details']['location'] = data[8 + num_components].string
                 ret['details']['campus'] = data[9 + num_components].string
