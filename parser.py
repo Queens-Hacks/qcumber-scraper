@@ -25,7 +25,7 @@ class SolusParser(object):
         """Dumps the contents of the parser to a file"""
         logging.critical("Encountered exception, dumping the HTML")
         with open("temp.html", "w") as f:
-            f.write(self.soup.prettify())
+            f.write(self.soup.prettify().encode("utf-8"))
 
     #-----------------------Logins----------------------------
 
