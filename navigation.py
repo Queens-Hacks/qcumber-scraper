@@ -129,25 +129,26 @@ class SolusSession(object):
 
     # ----------------------------- Subjects ------------------------------------- #
 
-    def dropdown_subject(self, subject_index):
+    def dropdown_subject(self, subject_unique):
         """Opens the dropdown menu for a subject"""
-        logging.debug("Dropping down subject {0}".format(subject_index))
-        action = self.parser.subject_id_at_index(subject_index)
+        logging.debug("Dropping down subject with unique '{0}'".format(subject_unique))
+
+        action = self.parser.subject_action(subject_unique)
         if not action:
-            raise Exception("Tried to drop down an invalid subject index {0}".format(subject_index))
+            raise Exception("Tried to drop down an invalid subject unique '{0}'".format(subject_unique))
 
         self._catalog_post(action)
 
         if self.recovery_state < 0:
-            self.recovery_stack[1] = subject_index
+            self.recovery_stack[1] = subject_unique
 
-    def rollup_subject(self, subject_index):
+    def rollup_subject(self, subject_unique):
         """Closes the dropdown menu for a subject"""
-        logging.debug("Rolling up subject {0}".format(subject_index))
+        logging.debug("Rolling up subject with a unique '{0}'".format(subject_unique))
 
-        action = self.parser.subject_id_at_index(subject_index)
+        action = self.parser.subject_action(subject_unique)
         if not action:
-            raise Exception("Tried to roll up an invalid subject index {0}".format(subject_index))
+            raise Exception("Tried to roll up an invalid subject unique '{0}'".format(subject_unique))
 
         self._catalog_post(action)
 
@@ -156,18 +157,18 @@ class SolusSession(object):
 
     # ----------------------------- Courses ------------------------------------- #
 
-    def open_course(self, course_index):
-        """Opens a course page by following the course link with the supplied index"""
-        logging.debug("Open course {0}".format(course_index))
+    def open_course(self, course_unique):
+        """Opens a course page"""
+        logging.debug("Opening course with unique '{0}'".format(course_unique))
 
-        action = self.parser.course_id_at_index(course_index)
+        action = self.parser.course_action(course_unique)
         if not action:
-            raise Exception("Tried to open a course with an invalid index {0}".format(course_index))
+            raise Exception("Tried to open a course with an invalid unique '{0}'".format(course_unique))
 
         self._catalog_post(action)
 
         if self.recovery_state < 0:
-            self.recovery_stack[2] = course_index
+            self.recovery_stack[2] = course_unique
 
     def return_from_course(self):
         """Navigates back from course to subject"""
@@ -181,39 +182,45 @@ class SolusSession(object):
 
     def show_sections(self):
         """Clicks on the 'View class sections' button on the course page if it exists"""
-        logging.debug("Pressing the 'View class sections' button")
-        if self.parser._validate_id('DERIVED_SAA_CRS_SSR_PB_GO'):
-            self._catalog_post('DERIVED_SAA_CRS_SSR_PB_GO')
+        action = self.parser.show_sections_action()
 
-    def switch_to_term(self, solus_id):
-        """Shows the sections for the term with the specified solus_id"""
-        logging.debug("Switching to term {0}".format(solus_id))
-        self._catalog_post(action='DERIVED_SAA_CRS_SSR_PB_GO$98$', extras={'DERIVED_SAA_CRS_TERM_ALT': solus_id})
+        if action:
+            logging.debug("Pressing the 'View class sections' button")
+            self._catalog_post(action)
+
+    def switch_to_term(self, term_unique):
+        """Shows the sections for the term"""
+        logging.debug("Switching to term with unique '{0}'".format(term_unique))
+        value = self.parser.term_value(term_unique)
+
+        self._catalog_post(action='DERIVED_SAA_CRS_SSR_PB_GO$98$', extras={'DERIVED_SAA_CRS_TERM_ALT': value})
 
         if self.recovery_state < 0:
-            self.recovery_stack[3] = solus_id
+            self.recovery_stack[3] = term_unique
 
     def view_all_sections(self):
         """Presses the "view all sections" link on the course page if needed"""
-        logging.debug("Viewing all sections")
-        if self.parser._validate_id('CLASS_TBL_VW5$fviewall$0'):
-            self._catalog_post('CLASS_TBL_VW5$fviewall$0')
+        action = self.parser.view_all_action()
 
-    def visit_section_page(self, section_index):
+        if action:
+            logging.debug("Pressing the 'View all' button for sections")
+            self._catalog_post(action)
+
+    def visit_section_page(self, section_unique):
         """
-        Opens the dedicated page for the provided section.
+        Opens the dedicated page for the provided section unique.
         Used for deep scrapes
         """
-        logging.debug("Visiting section page for section {0}".format(section_index))
+        logging.debug("Visiting section page for section with unique '{0}'".format(section_unique))
 
-        action = self.parser.section_id_at_index(section_index)
+        action = self.parser.section_action(section_unique)
         if not action:
-            raise Exception("Tried to open a section with an invalid index")
+            raise Exception("Tried to open a section with an invalid unique '{0}'".format(section_unique))
 
         self._catalog_post(action)
 
         if self.recovery_state < 0:
-            self.recovery_stack[4] = section_index
+            self.recovery_stack[4] = section_unique
 
     def return_from_section(self):
         """

@@ -27,6 +27,9 @@ class SolusParser(object):
         with open("temp.html", "w") as f:
             f.write(self.soup.prettify().encode("utf-8"))
 
+    def _clean_html(self, text):
+        return text.replace('&nbsp;', ' ').strip()
+
     #-----------------------Logins----------------------------
 
     def login_solus_link(self):
@@ -53,112 +56,216 @@ class SolusParser(object):
 
         return dict(url=url, payload=payload)
 
-    #------------------Get IDs by index--------------------------
+    #---------------------Get actions from uniques-----------------------
 
-    def _validate_id(self, link_id, tag_type="a", top_tag=None):
-        """Returns the link_id and found tag if it's found, None otherwise."""
-
-        if top_tag is None:
-            top_tag = self.soup
-
-        tag = top_tag.find(tag_type, {"id": link_id})
-        if tag:
-            # Found it on the page, valid id
-            return link_id, tag
-
-        # Link not on page, doesn't exist
-        return None, None
-
-    def subject_id_at_index(self, index, return_tag=False):
-        """
-        Returns the id of the subject at the index on the page.
-        None if the subject doesn't exist.
-        Returns the found tag as well as the id if `return_tag` is True.
-        """
-        # The general format of all the subject links
-        link_format = "DERIVED_SSS_BCC_GROUP_BOX_1$84$${0}"
-
-        if return_tag:
-            return self._validate_id(link_format.format(index))
-        else:
-            return self._validate_id(link_format.format(index))[0]
-
-    def course_id_at_index(self, index):
-        """
-        Returns the id of the course at the specified index on the page.
-        None if the course doesn't exist.
-        """
-
-        # General format of all course links
-        link_format = "CRSE_TITLE${0}"
-
-        return self._validate_id(link_format.format(index))[0]
-
-    def section_id_at_index(self, index, return_tag=False, top_tag=None):
-        """
-        Returns the id of the section at the specified index on the page.
-        None if it doesn't exist.
-        """
-
-        # General format of all section links
-        link_format = "CLASS_SECTION${0}"
-
-        if return_tag:
-            return self._validate_id(link_format.format(index), top_tag=top_tag)
-        else:
-            return self._validate_id(link_format.format(index), top_tag=top_tag)[0]
-
-    #---------------------------Counting------------------------
-
-    def num_subjects(self):
-        """Returns the number of subjects on the page"""
-        links = self.soup.find_all(id=re.compile("DERIVED_SSS_BCC_GROUP_BOX_1\$84\$\$[0-9]+"))
-        # TODO if needed: Check if ID numbers are continuous
-        return len(links)
-
-    def num_courses(self):
-        """Returns the number of courses on the page"""
-        links = self.soup.find_all(id=re.compile("CRSE_TITLE\$[0-9]+"))
-        # TODO if needed: Check if ID numbers are continuous
-        return len(links)
-
-    def num_sections(self):
-        """Returns the number of sections on the page"""
-        links = self.soup.find_all(id=re.compile("CLASS_SECTION\$[0-9]+"))
-        # TODO if needed: Check if ID numbers are continuous
-        return len(links)
-
-    #-------------------------General-------------------------------
-
-    def _clean_html(self, text):
-        return text.replace('&nbsp;',' ').strip()
-
-    #----------------------Subject info-----------------------------
-
-    def subject_at_index(self, index):
-        """
-        Returns the title, abbreviation, and id of
-        the subject at the specified index on the page
-        """
-
-        # Get the tag at the index
-        link_id, tag = self.subject_id_at_index(index, return_tag=True)
+    def subject_action(self, subject_unique):
+        """Return the action for the subject unique"""
+        tag = self.soup.find("a", id=re.compile("DERIVED_SSS_BCC_GROUP_BOX_1\$84\$\$[0-9]+"), text=subject_unique)
         if not tag:
+            logging.warning("Couldn't find the subject '{0}'".format(subject_unique))
             return None
 
-        # Extract the subject title and abbreviation
-        m = re.search("^([^-]*) - (.*)$", self._clean_html(tag.get_text()))
-        if not m:
-            logging.warning("Couldn't extract title and abbreviation from dropdown")
+        return tag["id"]
+
+    def course_action(self, course_unique):
+        """Return the action for the course unique"""
+        tag = self.soup.find("a", id=re.compile("CRSE_NBR\$[0-9]+"), text=course_unique)
+        if not tag:
+            logging.warning("Couldn't find the course '{0}'".format(course_unique))
             return None
 
-        subject_abbr = m.group(1)
-        subject_title = m.group(2)
+        return tag["id"]
 
-        return dict(title=subject_title, abbreviation=subject_abbr, action=link_id)
+    def term_value(self, term_unique):
+        """Return the value for the term unique"""
+        dropdown = self.soup.find("select", id="DERIVED_SAA_CRS_TERM_ALT")
+        if not dropdown:
+            raise Exception("Couldn't find a term dropdown")
 
+        tag = dropdown.find("option", text=term_unique)
+        if not tag:
+            logging.warning("Couldn't find the term '{0}'")
+            return None
 
-    #-----------------------Course info-----------------------------
+        return tag["value"]
+
+    def section_action(self, section_unique):
+        """Return the action of the section unique"""
+        tag = self.soup.find("a", id=re.compile("CLASS_SECTION\$[0-9]+"), text=section_unique)
+        if not tag:
+            logging.warning("Couldn't find section '{0}'".format(section_unique))
+            return None
+
+        return tag["id"]
+
+    def show_sections_action(self):
+        """Returns the action to show sections, `None` if not needed"""
+        link_id = "DERIVED_SAA_CRS_SSR_PB_GO"
+        if self.soup.find("a", id=link_id):
+            return link_id
+        return None
+
+    def view_all_action(self):
+        """Returns the action to view all sections, `None` if not needed"""
+        link_id = "CLASS_TBL_VW5$fviewall$0"
+        if self.soup.find("a", id=link_id):
+            return link_id
+        return None
+
+    #--------------------------Get all uniques (and basic data)---------------------
+
+    def all_subjects(self, start=0, end=None, step=1):
+        """Returns a list of dicts containing the name, abbreviation, and unique of the subjects"""
+
+        # Find all subjects on the page
+        tags = self.soup.find_all("a", id=re.compile("DERIVED_SSS_BCC_GROUP_BOX_1\$84\$\$[0-9]+"))
+
+        # Figure out the ending point
+        if end is None:
+            end = len(tags)
+        else:
+            end = min(end, len(tags))
+
+        ret = []
+        # Loop over the links and extract the information
+        for i in range(start, end, step):
+
+            # Extract the subject title and abbreviation
+            m = re.search("^\s*([^-\s]*)\s+-\s+(.*)$", self._clean_html(tags[i].get_text()))
+            if not m:
+                logging.warning("Couldn't extract title and abbreviation from dropdown")
+                continue
+
+            abbr = m.group(1)
+            title = m.group(2)
+
+            # Add the discovered information to the return list
+            ret.append(dict(title=title, abbreviation=abbr, _unique=tags[i].get_text()))
+
+        return ret
+
+    def all_courses(self, start=0, end=None, step=1):
+        """Returns a list of all the uniques of the courses"""
+
+        # Find all course tags
+        tags = self.soup.find_all("a", id=re.compile("CRSE_NBR\$[0-9]+"))
+
+        # Figure out the ending point
+        if end is None:
+            end = len(tags)
+        else:
+            end = min(end, len(tags))
+
+        ret = []
+        for i in range(start, end, step):
+            ret.append(tags[i].get_text())
+
+        return ret
+
+    def all_terms(self):
+        """
+        Returns a list of dicts containing term data (year, season, _unique) in the current course.
+        Returns an empty list if the class isn't scheduled
+        """
+
+        DROPDOWN_ID = "DERIVED_SAA_CRS_TERM_ALT"
+
+        term_sel = self.soup.find("select", id=DROPDOWN_ID)
+
+        ret = []
+        # Check if class is scheduled
+        if term_sel:
+            for x in term_sel.find_all("option"):
+                m = re.search('^([^\s]+)\s+(.+)$', x.get_text())
+                if not m:
+                    logging.warning("Couldn't extract data from term dropdown")
+                    continue
+
+                ret.append(dict(year=m.group(1), season=m.group(2), _unique=x.get_text()))
+
+        return ret
+
+    def all_section_data(self):
+        """
+        Returns a list of all the sections data
+
+        Format:
+        [
+            {
+                "_unique": The text on the link
+                "basic": {
+                    "class_num": Class number
+                    "solus_id": Numeric id
+                    "type": LEC, LAB, etc
+                    "status": (open/closed)
+                },
+                "classes": [
+                    {
+                        'day_of_week': 1-7, starting with monday
+                        'start_time': datetime object
+                        'end_time': datetime object
+                        'location': room
+                        'instructors': [instructor names]
+                        'term_start': datetime object
+                        'term_end': datetime object
+                    }, ...
+                ]
+            }, ...
+        ]
+        """
+
+        LINK_FORMAT = "CLASS_SECTION${0}"
+
+        tables = self.soup.find_all("table", id=re.compile("CLASS\$scroll\$[0-9]+"))
+
+        ret = []
+        # Iterate over all the tables
+        for i in range(len(tables)):
+
+            section_data = {}
+            basic = {}
+
+            # Get the basic section information (class number, solus id, type)
+            link_tag = tables[i].find("a", id=LINK_FORMAT.format(i))
+            if link_tag:
+                m = re.search('(\S+)-(\S+)\s+\((\S+)\)', link_tag.get_text())
+                if m:
+                    basic["solus_id"] = m.group(1)
+                    basic["type"] = m.group(2)
+                    basic["class_num"] = m.group(3)
+                    section_data["_unique"] = link_tag.get_text()
+                else:
+                    logging.warning("Found section link but couldn't extract information from it")
+                    continue
+            else:
+                logging.warning("Couldn't find the section link at the specified index")
+                continue
+
+            # Get the open/closed status
+            stats = ("Open", "Closed")
+            for status in stats:
+                if tables[i].find("img", alt=status):
+                    basic["status"] = status
+                    break
+            else:
+                logging.warning("Couldn't find open/closed status on shallow scrape")
+                basic["status"] = None
+
+            # Get class data for the section
+            section_attrs = self.section_attrs_at_index(i)
+            if section_attrs is None:
+                logging.warning("Couldn't find section at specified index")
+                continue
+
+            section_data["classes"] = section_attrs
+            section_data["basic"] = basic
+
+            # Add the section information to the returned list
+            ret.append(section_data)
+
+        return ret
+
+    #-----------------------Page parsing methods-----------------------------
 
     def course_attrs(self):
         """Parses the course attributes out of the page
@@ -315,80 +422,6 @@ class SolusParser(object):
 
         return ret
 
-    #---------------------------Term info-----------------------------
-
-    def all_terms(self):
-        """
-        Returns a list of dicts containing term data in the current course.
-        Returns an empty list if the class isn't scheduled
-        """
-
-        DROPDOWN_ID = "DERIVED_SAA_CRS_TERM_ALT"
-
-        ret = []
-        term_sel = self.soup.find("select", id=DROPDOWN_ID)
-
-        # Check if class is scheduled
-        if term_sel:
-            for x in term_sel.find_all("option"):
-                m = re.search('^([^\s]+) (.+)$', x.string)
-                if m:
-                    ret.append(dict(solus_id=x['value'], year=m.group(1), season=m.group(2)))
-
-        return ret
-
-
-    #----------------------------------Section info------------------------------------
-
-    def section_link_at_index(self, table_tag, index):
-        """
-        Returns the `class_num`, `solus_id`, and `type` of the section
-        at the specified index on the page
-        None if it doesn't exist
-        """
-
-        # Get the tag at the index
-        link_id, tag = self.section_id_at_index(index, return_tag=True, top_tag=table_tag)
-        if not tag:
-            logging.warning("Couldn't find the section at the specified index")
-            return None
-
-        # Extract the subject title and abbreviation
-        m = re.search('(\S+)-(\S+)\s+\((\S+)\)', tag.string)
-        if not m:
-            logging.warning("Couldn't extract section information from the page")
-            return None
-
-        return dict(class_num=m.group(3), solus_id=m.group(1), type=m.group(2))
-
-    def section_at_index(self, index):
-        """
-        Returns the `class_num`, `solus_id`, `type`, and `status` (open/closed)
-        of the section at the specified index on the page
-        None if it doesn't exist
-        """
-
-        TABLE_ID = "CLASS$scroll${0}"
-        table_id, table_tag = self._validate_id(TABLE_ID.format(index), tag_type="table")
-
-        if table_tag is None:
-            logging.warning("Couldn't find the section at the specified index")
-            return None
-
-        # Get the section link information
-        data = self.section_link_at_index(table_tag, index)
-
-        # Get the open/closed status
-        stats = ("Open", "Closed")
-        for status in stats:
-            if table_tag.find("img", alt=status):
-                data["status"] = status
-                break
-        else:
-            logging.warning("Couldn't find open/closed status on shallow scrape")
-
-        return data
-
     def section_attrs_at_index(self, index):
         """
         Returns a list containing class information for the specified section index on the page.
@@ -398,7 +431,7 @@ class SolusParser(object):
         Return format:
         [
             {
-                'day_of_week': 1-7, starting with monday
+                'day_of_week': 1-7, starting with monday, None for 'TBA' and other
                 'start_time': datetime object
                 'end_time': datetime object
                 'location': room
@@ -426,9 +459,9 @@ class SolusParser(object):
 
         NON_INSTRUCTORS = ("TBA", "Staff")
 
-        data_table = self._validate_id(TABLE_ID.format(index), tag_type="table")[1]
+        data_table = self.soup.find("table", id=TABLE_ID.format(index))
         if not data_table:
-            raise Exception("Invalid section index passed to `section_info_at_index`")
+            return None
 
         # Get the needed cells
         cells = data_table.find_all("span", {"class": CELL_CLASS})
@@ -465,28 +498,45 @@ class SolusParser(object):
             term_start = datetime.strptime(m.group(1), "%Y/%m/%d") if m else None
             term_end = datetime.strptime(m.group(2), "%Y/%m/%d") if m else None
 
+            sections = []
+
             # Loop through all days
             all_days = values[x+0].lower()
             while len(all_days) > 0:
                 day_abbr = all_days[-2:]
                 all_days = all_days[:-2]
 
+                # Get day of week
                 if day_abbr in DAY_MAP:
-                    ret.append({
-                        'day_of_week': DAY_MAP[day_abbr],
-                        'start_time': start_time,
-                        'end_time': end_time,
-                        'location': location,
-                        'instructors': instructors,
-                        'term_start': term_start,
-                        'term_end': term_end
-                    })
+                    day_of_week = DAY_MAP[day_abbr]
+                else:
+                    # A non-day was encountered (most likely 'TBA')
+                    day_of_week = None
+                    # Make sure only a single section is added
+                    sections = []
+
+                # Append the section to the list
+                sections.append({
+                    'day_of_week': day_of_week,
+                    'start_time': start_time,
+                    'end_time': end_time,
+                    'location': location,
+                    'instructors': instructors,
+                    'term_start': term_start,
+                    'term_end': term_end
+                })
+
+                # Stop adding if a non-day was encountered
+                if day_of_week is None:
+                    break
+
+            ret.extend(sections)
 
         return ret
 
-    def section_attrs(self):
+    def section_deep_attrs(self):
         """
-        Parses out the section data from the section page. Used for deep scrapes
+        Parses out the section data from the section page. Used for deep scrapes.
         Information availible on the course page (such as class times) is not recorded.
 
         For best results, update the information from the course page with this information

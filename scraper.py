@@ -14,7 +14,11 @@ class SolusScraper(object):
 
         logging.info("Starting job: {0}".format(self.job))
 
-        self.scrape_letters()
+        try:
+            self.scrape_letters()
+        except Exception as e:
+            self.session.parser.dump_html()
+            raise
 
     def scrape_letters(self):
         """Scrape all the letters"""
@@ -29,49 +33,41 @@ class SolusScraper(object):
     def scrape_subjects(self):
         """Scrape all the subjects"""
 
-        # Find the number of subjects (so we know how to iterate over them)
-        num_subjects = self.session.parser.num_subjects()
+        # Neatness
+        start = self.job["subject_start"]
+        end = self.job["subject_end"]
+        step = self.job["subject_step"]
 
-        subject_start = self.job["subject_start"]
-        subject_end = self.job["subject_end"]
-        subject_step = self.job["subject_step"]
-
-        # Find the actual number of subject
-        if subject_end is None:
-            subject_end = num_subjects
-        else:
-            subject_end = min(subject_end, num_subjects)
+        # Get a list of all subjects to iterate over
+        all_subjects = self.session.parser.all_subjects(start=start, end=end, step=step)
 
         # Iterate over all subjects
-        for subject_index in range(subject_start, subject_end, subject_step):
-            data = self.session.parser.subject_at_index(subject_index)
+        for subject in all_subjects:
 
-            logging.info("--Subject: {abbreviation} - {title}".format(**data))
+            logging.info("--Subject: {abbreviation} - {title}".format(**subject))
 
-            self.session.dropdown_subject(subject_index)
+            self.session.dropdown_subject(subject["_unique"])
 
             self.scrape_courses()
 
-            self.session.rollup_subject(subject_index)
+            self.session.rollup_subject(subject["_unique"])
 
     def scrape_courses(self):
         """Scrape courses"""
-        num_courses = self.session.parser.num_courses()
 
-        course_start = self.job["course_start"]
-        course_end = self.job["course_end"]
+        # Neatness
+        start = self.job["course_start"]
+        end = self.job["course_end"]
 
-        # Find the actual number of subject
-        if course_end is None:
-            course_end = num_courses
-        else:
-            course_end = min(course_end, num_courses)
+        # Get a list of all courses to iterate over
+        all_courses = self.session.parser.all_courses(start=start, end=end)
 
         # Iterate over all courses
-        for course_index in range(course_start, course_end):
-            self.session.open_course(course_index)
+        for course_unique in all_courses:
+            self.session.open_course(course_unique)
 
             course_attrs = self.session.parser.course_attrs()
+
             logging.info("----Course: {number} - {title}".format(**course_attrs['basic']))
             logging.debug("COURSE DATA DUMP: {0}".format(course_attrs['extra']))
 
@@ -85,32 +81,35 @@ class SolusScraper(object):
         """Scrape terms"""
 
         # Get all terms on the page and iterate over them
-        terms = self.session.parser.all_terms()
-        for term in terms:
+        all_terms = self.session.parser.all_terms()
+        for term in all_terms:
             logging.info("------Term: {year} - {season}".format(**term))
-            self.session.switch_to_term(term['solus_id'])
-            self.session.view_all_sections()
+            self.session.switch_to_term(term["_unique"])
 
+            self.session.view_all_sections()
             self.scrape_sections()
 
     def scrape_sections(self):
         """Scrape sections"""
-        num_sections = self.session.parser.num_sections()
 
-        # Go through all the sections in the term
-        for section_index in range(0, num_sections):
-            section_info = self.session.parser.section_at_index(section_index)
-            logging.info("--------Section: {class_num}-{type} ({solus_id})".format(**section_info))
+        # Grab all the basic data
+        all_sections = self.session.parser.all_section_data()
 
-            section_attrs = {}
-            section_attrs['classes'] = self.session.parser.section_attrs_at_index(section_index)
+        if logging.getLogger().getEffectiveLevel() == logging.INFO:
+            for section in all_sections:
+                logging.info("--------Section: {class_num}-{type} ({solus_id}) -- {status}".format(**section["basic"]))
+                if not self.job["deep"]:
+                    logging.debug("SECTION CLASS DATA: {0}".format(section["classes"]))
 
-            # If doing a deep scrape, visit the section page and add the information
-            if self.job["deep"]:
-                self.session.visit_section_page(section_index)
+        # Deep scrape, go to the section page and add the data there
+        if self.job["deep"]:
+            for i in range(len(all_sections)):
+                self.session.visit_section_page(all_sections[i]["_unique"])
 
-                # Add the new information to the section_attrs dict
-                section_attrs.update(self.session.parser.section_attrs())
+                # Add the new information to the all_sections dict
+                new_data = self.session.parser.section_deep_attrs()
+                all_sections[i].update(new_data)
+
                 self.session.return_from_section()
 
-            logging.debug("SECTION DATA DUMP: {0}".format(section_attrs))
+                logging.debug("SECTION DEEP DATA DUMP: {0}".format(all_sections[i]))
