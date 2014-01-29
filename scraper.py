@@ -95,7 +95,7 @@ class SolusScraper(object):
         # Grab all the basic data
         all_sections = self.session.parser.all_section_data()
 
-        if logging.getLogger().getEffectiveLevel() == logging.INFO:
+        if logging.getLogger().isEnabledFor(logging.INFO):
             for section in all_sections:
                 logging.info("--------Section: {class_num}-{type} ({solus_id}) -- {status}".format(**section["basic"]))
                 if not self.job["deep"]:
