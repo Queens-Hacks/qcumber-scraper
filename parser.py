@@ -6,6 +6,20 @@ import logging
 class SolusParser(object):
     """Parses SOLUS's crappy HTML"""
 
+    # For getting the correct tags
+    ALL_SUBJECTS = re.compile("DERIVED_SSS_BCC_GROUP_BOX_1\$84\$\$[0-9]+")
+    ALL_COURSES = re.compile("CRSE_NBR\$[0-9]+")
+    ALL_SECTIONS = re.compile("CLASS_SECTION\$[0-9]+")
+    ALL_SECTION_TABLES = re.compile("CLASS\$scroll\$[0-9]+")
+
+    # For getting information out of the page
+    SUBJECT_INFO = re.compile("^\s*([^-\s]*)\s+-\s+(.*)$") # Subject - Abbreviation
+    COURSE_INFO = re.compile("^([\S]+)\s+([\S]+)\s+-\s+(.*)$") # Abbreviation Code - Name
+    TERM_INFO = re.compile("^([^\s]+)\s+(.+)$") # 2013 Fall
+    SECTION_INFO = re.compile("(\S+)-(\S+)\s+\((\S+)\)") #001-LEC (1234) 
+    TIME_INFO = re.compile("(\d+:\d+[AP]M)") #1:30PM
+    DATE_INFO = re.compile("^([\S]+)\s*-\s*([\S]+)$") #yyyy/mm/dd - yyyy/mm/dd
+
     def __init__(self):
         self.soup = None
         self._souplib = 'lxml'
@@ -60,7 +74,7 @@ class SolusParser(object):
 
     def subject_action(self, subject_unique):
         """Return the action for the subject unique"""
-        tag = self.soup.find("a", id=re.compile("DERIVED_SSS_BCC_GROUP_BOX_1\$84\$\$[0-9]+"), text=subject_unique)
+        tag = self.soup.find("a", id=self.ALL_SUBJECTS, text=subject_unique)
         if not tag:
             logging.warning("Couldn't find the subject '{0}'".format(subject_unique))
             return None
@@ -69,7 +83,7 @@ class SolusParser(object):
 
     def course_action(self, course_unique):
         """Return the action for the course unique"""
-        tag = self.soup.find("a", id=re.compile("CRSE_NBR\$[0-9]+"), text=course_unique)
+        tag = self.soup.find("a", id=self.ALL_COURSES, text=course_unique)
         if not tag:
             logging.warning("Couldn't find the course '{0}'".format(course_unique))
             return None
@@ -91,7 +105,7 @@ class SolusParser(object):
 
     def section_action(self, section_unique):
         """Return the action of the section unique"""
-        tag = self.soup.find("a", id=re.compile("CLASS_SECTION\$[0-9]+"), text=section_unique)
+        tag = self.soup.find("a", id=self.ALL_SECTIONS, text=section_unique)
         if not tag:
             logging.warning("Couldn't find section '{0}'".format(section_unique))
             return None
@@ -118,7 +132,7 @@ class SolusParser(object):
         """Returns a list of dicts containing the name, abbreviation, and unique of the subjects"""
 
         # Find all subjects on the page
-        tags = self.soup.find_all("a", id=re.compile("DERIVED_SSS_BCC_GROUP_BOX_1\$84\$\$[0-9]+"))
+        tags = self.soup.find_all("a", id=self.ALL_SUBJECTS)
 
         # Figure out the ending point
         if end is None:
@@ -131,7 +145,7 @@ class SolusParser(object):
         for i in range(start, end, step):
 
             # Extract the subject title and abbreviation
-            m = re.search("^\s*([^-\s]*)\s+-\s+(.*)$", self._clean_html(tags[i].get_text()))
+            m = self.SUBJECT_INFO.search(self._clean_html(tags[i].get_text()))
             if not m:
                 logging.warning("Couldn't extract title and abbreviation from dropdown")
                 continue
@@ -148,7 +162,7 @@ class SolusParser(object):
         """Returns a list of all the uniques of the courses"""
 
         # Find all course tags
-        tags = self.soup.find_all("a", id=re.compile("CRSE_NBR\$[0-9]+"))
+        tags = self.soup.find_all("a", id=self.ALL_COURSES)
 
         # Figure out the ending point
         if end is None:
@@ -176,7 +190,7 @@ class SolusParser(object):
         # Check if class is scheduled
         if term_sel:
             for x in term_sel.find_all("option"):
-                m = re.search('^([^\s]+)\s+(.+)$', x.get_text())
+                m = self.TERM_INFO.search(x.get_text())
                 if not m:
                     logging.warning("Couldn't extract data from term dropdown")
                     continue
@@ -216,7 +230,7 @@ class SolusParser(object):
 
         LINK_FORMAT = "CLASS_SECTION${0}"
 
-        tables = self.soup.find_all("table", id=re.compile("CLASS\$scroll\$[0-9]+"))
+        tables = self.soup.find_all("table", id=self.ALL_SECTION_TABLES)
 
         ret = []
         # Iterate over all the tables
@@ -228,7 +242,7 @@ class SolusParser(object):
             # Get the basic section information (class number, solus id, type)
             link_tag = tables[i].find("a", id=LINK_FORMAT.format(i))
             if link_tag:
-                m = re.search('(\S+)-(\S+)\s+\((\S+)\)', link_tag.get_text())
+                m = self.SECTION_INFO.search(link_tag.get_text())
                 if m:
                     basic["solus_id"] = m.group(1)
                     basic["type"] = m.group(2)
@@ -333,7 +347,8 @@ class SolusParser(object):
             raise Exception("Could not find the course title to parse")
 
         temp = self._clean_html(title.string)
-        m = re.search('^([\S]+)\s+([\S]+)\s+-\s+(.*)$', temp)
+
+        m = self.COURSE_INFO.search(temp)
         if not m:
             raise Exception("Title found ({0}) didn't match regular expression".format(temp))
 
@@ -488,13 +503,13 @@ class SolusParser(object):
             location = values[x+3]
 
             # Class start/end times
-            m = re.search("(\d+:\d+[AP]M)", values[x+1])
+            m = self.TIME_INFO.search(values[x+1])
             start_time = datetime.strptime(m.group(1), "%I:%M%p") if m else None
-            m = re.search("(\d+:\d+[AP]M)", values[x+2])
+            m = self.TIME_INFO.search(values[x+2])
             end_time = datetime.strptime(m.group(1), "%I:%M%p") if m else None
 
             # Class start/end dates
-            m = re.search('^([\S]+)\s*-\s*([\S]+)$', values[x+4])
+            m = self.DATE_INFO.search(values[x+4])
             term_start = datetime.strptime(m.group(1), "%Y/%m/%d") if m else None
             term_end = datetime.strptime(m.group(2), "%Y/%m/%d") if m else None
 
