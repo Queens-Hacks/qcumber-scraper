@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import sys
 import logging
 from multiprocessing import Process, Queue
 try:
@@ -118,7 +119,14 @@ class JobManager(object):
 
 if __name__ == "__main__":
 
-    logging.basicConfig(format="[%(asctime)s][%(levelname)s][%(processName)s]: %(message)s", level=logging.INFO)
+    root_logger = logging.getLogger()
+
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(logging.Formatter("[%(asctime)s][%(levelname)s][%(processName)s]: %(message)s"))
+
+    root_logger.addHandler(handler)
+    root_logger.setLevel(logging.INFO)
+
     logging.getLogger("requests").setLevel(logging.WARNING)
 
     # Testing
