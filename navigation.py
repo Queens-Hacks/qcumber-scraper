@@ -121,8 +121,8 @@ class SolusSession(object):
 
     def select_alphanum(self, alphanum):
         """Navigates to a letter/number"""
-        logging.debug("Selecting letter {0}".format(alphanum))
-        self._catalog_post('DERIVED_SSS_BCC_SSR_ALPHANUM_{0}'.format(alphanum.upper()))
+        logging.debug(u"Selecting letter {0}".format(alphanum))
+        self._catalog_post(u'DERIVED_SSS_BCC_SSR_ALPHANUM_{0}'.format(alphanum.upper()))
 
         if self.recovery_state < 0:
             self.recovery_stack[0] = alphanum
@@ -131,11 +131,11 @@ class SolusSession(object):
 
     def dropdown_subject(self, subject_unique):
         """Opens the dropdown menu for a subject"""
-        logging.debug("Dropping down subject with unique '{0}'".format(subject_unique))
+        logging.debug(u"Dropping down subject with unique '{0}'".format(subject_unique))
 
         action = self.parser.subject_action(subject_unique)
         if not action:
-            raise Exception("Tried to drop down an invalid subject unique '{0}'".format(subject_unique))
+            raise Exception(u"Tried to drop down an invalid subject unique '{0}'".format(subject_unique))
 
         self._catalog_post(action)
 
@@ -144,11 +144,11 @@ class SolusSession(object):
 
     def rollup_subject(self, subject_unique):
         """Closes the dropdown menu for a subject"""
-        logging.debug("Rolling up subject with a unique '{0}'".format(subject_unique))
+        logging.debug(u"Rolling up subject with a unique '{0}'".format(subject_unique))
 
         action = self.parser.subject_action(subject_unique)
         if not action:
-            raise Exception("Tried to roll up an invalid subject unique '{0}'".format(subject_unique))
+            raise Exception(u"Tried to roll up an invalid subject unique '{0}'".format(subject_unique))
 
         self._catalog_post(action)
 
@@ -159,11 +159,11 @@ class SolusSession(object):
 
     def open_course(self, course_unique):
         """Opens a course page"""
-        logging.debug("Opening course with unique '{0}'".format(course_unique))
+        logging.debug(u"Opening course with unique '{0}'".format(course_unique))
 
         action = self.parser.course_action(course_unique)
         if not action:
-            raise Exception("Tried to open a course with an invalid unique '{0}'".format(course_unique))
+            raise Exception(u"Tried to open a course with an invalid unique '{0}'".format(course_unique))
 
         self._catalog_post(action)
 
@@ -190,7 +190,7 @@ class SolusSession(object):
 
     def switch_to_term(self, term_unique):
         """Shows the sections for the term"""
-        logging.debug("Switching to term with unique '{0}'".format(term_unique))
+        logging.debug(u"Switching to term with unique '{0}'".format(term_unique))
         value = self.parser.term_value(term_unique)
 
         self._catalog_post(action='DERIVED_SAA_CRS_SSR_PB_GO$98$', extras={'DERIVED_SAA_CRS_TERM_ALT': value})
@@ -211,11 +211,11 @@ class SolusSession(object):
         Opens the dedicated page for the provided section unique.
         Used for deep scrapes
         """
-        logging.debug("Visiting section page for section with unique '{0}'".format(section_unique))
+        logging.debug(u"Visiting section page for section with unique '{0}'".format(section_unique))
 
         action = self.parser.section_action(section_unique)
         if not action:
-            raise Exception("Tried to open a section with an invalid unique '{0}'".format(section_unique))
+            raise Exception(u"Tried to open a section with an invalid unique '{0}'".format(section_unique))
 
         self._catalog_post(action)
 

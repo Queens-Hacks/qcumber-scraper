@@ -28,7 +28,7 @@ class SolusParser(object):
         try:
             bs4.BeautifulSoup("", self._souplib)
         except bs4.FeatureNotFound as e:
-            logging.warning("Not using {0} for parsing, using builtin parser instead".format(self._souplib))
+            logging.warning(u"Not using {0} for parsing, using builtin parser instead".format(self._souplib))
             self._souplib = "html.parser"
 
     def update_html(self, text):
@@ -76,7 +76,7 @@ class SolusParser(object):
         """Return the action for the subject unique"""
         tag = self.soup.find("a", id=self.ALL_SUBJECTS, text=subject_unique)
         if not tag:
-            logging.warning("Couldn't find the subject '{0}'".format(subject_unique))
+            logging.warning(u"Couldn't find the subject '{0}'".format(subject_unique))
             return None
 
         return tag["id"]
@@ -85,7 +85,7 @@ class SolusParser(object):
         """Return the action for the course unique"""
         tag = self.soup.find("a", id=self.ALL_COURSES, text=course_unique)
         if not tag:
-            logging.warning("Couldn't find the course '{0}'".format(course_unique))
+            logging.warning(u"Couldn't find the course '{0}'".format(course_unique))
             return None
 
         return tag["id"]
@@ -98,7 +98,7 @@ class SolusParser(object):
 
         tag = dropdown.find("option", text=term_unique)
         if not tag:
-            logging.warning("Couldn't find the term '{0}'")
+            logging.warning(u"Couldn't find the term '{0}'".format(term_unique))
             return None
 
         return tag["value"]
@@ -107,7 +107,7 @@ class SolusParser(object):
         """Return the action of the section unique"""
         tag = self.soup.find("a", id=self.ALL_SECTIONS, text=section_unique)
         if not tag:
-            logging.warning("Couldn't find section '{0}'".format(section_unique))
+            logging.warning(u"Couldn't find section '{0}'".format(section_unique))
             return None
 
         return tag["id"]
@@ -350,7 +350,7 @@ class SolusParser(object):
 
         m = self.COURSE_INFO.search(temp)
         if not m:
-            raise Exception("Title found ({0}) didn't match regular expression".format(temp))
+            raise Exception(u"Title found ({0}) didn't match regular expression".format(temp))
 
         ret['basic'] = {
             'title' : m.group(3),
@@ -433,7 +433,7 @@ class SolusParser(object):
                         ret['extra']['CEAB'][labels[x].string[:-1]] = temp
 
             else:
-                raise Exception('Encountered unexpected info_box with title: "{0}"'.format(box_title))
+                raise Exception(u"Encountered unexpected info_box with title: '{0}'".format(box_title))
 
         return ret
 
@@ -497,7 +497,7 @@ class SolusParser(object):
                 for i in range(0, len(lis), 2):
                     last_name = lis[i].strip()
                     other_names = lis[i+1].strip()
-                    instructors.append("{0}, {1}".format(last_name, other_names))
+                    instructors.append(u"{0}, {1}".format(last_name, other_names))
 
             # Location
             location = values[x+3]
