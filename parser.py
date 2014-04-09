@@ -597,7 +597,7 @@ class SolusParser(object):
                 continue
 
             elif temp.string == DETAIL_LABEL:
-                labels = table.find_all("label", {"class": EDITBOX_LABEL_CLASS})
+                labels = table.find_all("span", {"class": EDITBOX_LABEL_CLASS})
                 data = table.find_all("span", {"class": EDITBOX_DATA_CLASS})
                 num_components = len(data) - len(labels)
 
