@@ -337,7 +337,6 @@ class SolusParser(object):
 
         ret = {
             'extra':{
-                'CEAB':{}
             }
         }
 
@@ -429,6 +428,9 @@ class SolusParser(object):
 
                     # Add the data to the dict if it exists
                     if labels[x].string:
+                        if not 'CEAB' in ret['extra']:
+                            ret['extra']['CEAB'] = {}
+
                         # Remove the last character of the label to remove the ":"
                         ret['extra']['CEAB'][labels[x].string[:-1]] = temp
 
