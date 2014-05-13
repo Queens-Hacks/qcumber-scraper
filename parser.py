@@ -308,7 +308,6 @@ class SolusParser(object):
         """
 
         TITLE_CLASS = "PALEVEL0SECONDARY"
-        INFO_TABLE_CLASS = "SSSGROUPBOXLTBLUEWBO"
         INFO_BOX_CLASS = "PSGROUPBOXNBO"
         INFO_BOX_HEADER_CLASS = "SSSGROUPBOXLTBLUE"
         DESCRIPTION_CLASS = "PSLONGEDITBOX"
@@ -357,9 +356,6 @@ class SolusParser(object):
             'description' : ""
         }
 
-        # Blue table with info, enrollment, and description
-        info_table = self.soup.find("table", {"class": INFO_TABLE_CLASS})
-
         # Look through inner tables
         info_boxes = self.soup.find_all("table", {"class": INFO_BOX_CLASS})
         for table in info_boxes:
@@ -383,12 +379,12 @@ class SolusParser(object):
             elif box_title in (COURSE_DETAIL, ENROLL_INFO):
 
                 # Labels and values for "Add/Drop Consent" (enroll), "Career" (course), and "Grading Basis" (course)
-                labels = table.find_all("label", {"class": DROPDOWN_LABEL_CLASS})
+                labels = table.find_all("span", {"class": DROPDOWN_LABEL_CLASS})
                 data = table.find_all("span", {"class": DROPDOWN_DATA_CLASS})
 
                 if box_title == ENROLL_INFO:
                     # Labels and values for "Typically Offered", "Enrollment Requirement",
-                    labels += table.find_all("label", {"class": EDITBOX_LABEL_CLASS})
+                    labels += table.find_all("span", {"class": EDITBOX_LABEL_CLASS})
                     data += table.find_all("span", {"class": EDITBOX_DATA_CLASS})
 
                 # Add all the type -> value mappings to the ret dict
@@ -399,7 +395,7 @@ class SolusParser(object):
                 # Special case for course detail, "Units" and "Course Components"
                 if box_title == COURSE_DETAIL:
                     # Units and course components
-                    labels = table.find_all("label", {"class": EDITBOX_LABEL_CLASS})
+                    labels = table.find_all("span", {"class": EDITBOX_LABEL_CLASS})
                     data = table.find_all("span", {"class": EDITBOX_DATA_CLASS})
                     for x in range(0, len(labels)):
                         if labels[x].string == COURSE_COMPS:
@@ -416,7 +412,7 @@ class SolusParser(object):
             # Process the CEAB information
             elif box_title == CEAB:
 
-                labels = table.find_all("label", {"class": EDITBOX_LABEL_CLASS})
+                labels = table.find_all("span", {"class": EDITBOX_LABEL_CLASS})
                 data = table.find_all("span", {"class": EDITBOX_DATA_CLASS})
 
                 for x in range(0, len(labels)):
