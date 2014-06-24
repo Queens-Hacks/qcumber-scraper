@@ -33,6 +33,8 @@ class SolusParser(object):
 
     def update_html(self, text):
         """Feed new data to the parser"""
+        text = text.replace('<abbr class="PTUNDERLINE">I</abbr>', 'I')  # XXX: Dirty hack to fix CISC scraping (it breaks without this)
+
         self.soup = bs4.BeautifulSoup(text, self._souplib)
 
     def dump_html(self):

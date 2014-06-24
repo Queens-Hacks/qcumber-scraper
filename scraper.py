@@ -1,4 +1,5 @@
 import logging
+import writer
 
 class SolusScraper(object):
     """The class that coordinates the actual scraping"""
@@ -46,13 +47,15 @@ class SolusScraper(object):
 
             logging.info(u"--Subject: {abbreviation} - {title}".format(**subject))
 
+            writer.write_subject(subject)
+
             self.session.dropdown_subject(subject["_unique"])
 
-            self.scrape_courses()
+            self.scrape_courses(subject)
 
             self.session.rollup_subject(subject["_unique"])
 
-    def scrape_courses(self):
+    def scrape_courses(self, subject):
         """Scrape courses"""
 
         # Neatness
@@ -67,17 +70,19 @@ class SolusScraper(object):
             self.session.open_course(course_unique)
 
             course_attrs = self.session.parser.course_attrs()
+            course_attrs['basic']['subject'] = subject['abbreviation']
 
             logging.info(u"----Course: {number} - {title}".format(**course_attrs['basic']))
             logging.debug(u"COURSE DATA DUMP: {0}".format(course_attrs['extra']))
+            writer.write_course(course_attrs)
 
             self.session.show_sections()
 
-            self.scrape_terms()
+            self.scrape_terms(course_attrs)
 
             self.session.return_from_course()
 
-    def scrape_terms(self):
+    def scrape_terms(self, course):
         """Scrape terms"""
 
         # Get all terms on the page and iterate over them
@@ -87,13 +92,14 @@ class SolusScraper(object):
             self.session.switch_to_term(term["_unique"])
 
             self.session.view_all_sections()
-            self.scrape_sections()
+            self.scrape_sections(course)
 
-    def scrape_sections(self):
+    def scrape_sections(self, course):
         """Scrape sections"""
 
         # Grab all the basic data
         all_sections = self.session.parser.all_section_data()
+
 
         if logging.getLogger().isEnabledFor(logging.INFO):
             for section in all_sections:
@@ -113,3 +119,10 @@ class SolusScraper(object):
                 self.session.return_from_section()
 
                 logging.debug(u"SECTION DEEP DATA DUMP: {0}".format(all_sections[i]))
+
+        for section in all_sections:
+            section['basic']['course'] = course['basic']['number']
+            section['basic']['subject'] = course['basic']['subject']
+
+            writer.write_section(section)
+

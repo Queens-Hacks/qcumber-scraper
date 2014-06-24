@@ -2,3 +2,4 @@
 *.pyo
 venv*
 config.py
+out
