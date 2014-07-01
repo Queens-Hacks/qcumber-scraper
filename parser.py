@@ -124,7 +124,8 @@ class SolusParser(object):
     def view_all_action(self):
         """Returns the action to view all sections, `None` if not needed"""
         link_id = "CLASS_TBL_VW5$fviewall$0"
-        if self.soup.find("a", id=link_id):
+        a_tag = self.soup.find("a", id=link_id)
+        if a_tag and a_tag.get_text() == 'View All':  # We have to check the text, as sometimes the opening persists
             return link_id
         return None
 

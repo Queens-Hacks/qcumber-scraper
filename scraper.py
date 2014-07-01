@@ -92,9 +92,9 @@ class SolusScraper(object):
             self.session.switch_to_term(term["_unique"])
 
             self.session.view_all_sections()
-            self.scrape_sections(course)
+            self.scrape_sections(course, term)
 
-    def scrape_sections(self, course):
+    def scrape_sections(self, course, term):
         """Scrape sections"""
 
         # Grab all the basic data
@@ -123,6 +123,8 @@ class SolusScraper(object):
         for section in all_sections:
             section['basic']['course'] = course['basic']['number']
             section['basic']['subject'] = course['basic']['subject']
+            section['basic']['year'] = term['year']
+            section['basic']['season'] = term['season']
 
             writer.write_section(section)
 
