@@ -3,3 +3,4 @@
 venv*
 config.py
 out
+.DS_Store
