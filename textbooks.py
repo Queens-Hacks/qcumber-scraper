@@ -20,11 +20,11 @@ def write_textbook(subject, course, textbook):
             oldtextbook = json.loads(f.read())
             oldtextbook['courses'].append(course_id)
             f.seek(0)
-            f.write(json.dumps(oldtextbook, sort_keys=True))
+            f.write(json.dumps(oldtextbook, indent=4, sort_keys=True))
     else:
         with open(os.path.join(out, '{}.json'.format(isbn)), 'w') as f:
             textbook['courses'] = [course_id]
-            f.write(json.dumps(textbook, sort_keys=True))
+            f.write(json.dumps(textbook, indent=4, sort_keys=True))
 
 class TextbookScraper(object):
 
