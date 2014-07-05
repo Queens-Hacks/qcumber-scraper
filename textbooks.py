@@ -20,11 +20,11 @@ def write_textbook(subject, course, textbook):
             oldtextbook = json.loads(f.read())
             oldtextbook['courses'].append(course_id)
             f.seek(0)
-            f.write(json.dumps(oldtextbook))
+            f.write(json.dumps(oldtextbook, sort_keys=True))
     else:
         with open(os.path.join(out, '{}.json'.format(isbn)), 'w') as f:
             textbook['courses'] = [course_id]
-            f.write(json.dumps(textbook))
+            f.write(json.dumps(textbook, sort_keys=True))
 
 class TextbookScraper(object):
 
@@ -115,7 +115,7 @@ class TextbookScraper(object):
                     textbook_attrs["isbn_10"] = None
                 else:
                     textbook_attrs["isbn_10"] = isbn_10
-                
+
                 # New data
                 new_price = self.price(temp.find("span", {"id": "ctl00_ContentBody_ctl00_CourseBooksRepeater_ctl{:02d}_test_NewPriceLabel".format(i)}).string)
                 new_available = self.num_available(temp.find("span", {"id": "ctl00_ContentBody_ctl00_CourseBooksRepeater_ctl{:02d}_test_NewAvailabilityLabel".format(i)}).string)
@@ -123,7 +123,7 @@ class TextbookScraper(object):
                     textbook_attrs["new_price"] = new_price
                 if new_available:
                     textbook_attrs["new_available"] = new_available
-                
+
                 # Used data
                 used_price = self.price(temp.find("span", {"id": "ctl00_ContentBody_ctl00_CourseBooksRepeater_ctl{:02d}_test_UsedPriceLabel".format(i)}).string)
                 used_available = self.num_available(temp.find("span", {"id": "ctl00_ContentBody_ctl00_CourseBooksRepeater_ctl{:02d}_test_UsedAvailabilityLabel".format(i)}).string)
