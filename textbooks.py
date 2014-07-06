@@ -1,30 +1,8 @@
 import requests
 import re
-import os
-import json
-from writer import out_path
-from config import OUTPUT_DIR
+from writer import write_textbook
 from bs4 import BeautifulSoup
 
-def write_textbook(subject, course, textbook):
-    out = out_path('textbooks')
-
-    isbn = textbook['isbn_13'] or textbook['isbn_10']
-    filename = os.path.join(out, '{}.json'.format(isbn))
-
-    course_id = '{} {}'.format(subject, course)
-
-    if os.path.isfile(filename):
-        # The file already exists, add this course
-        with open(filename, 'r+t') as f:
-            oldtextbook = json.loads(f.read())
-            oldtextbook['courses'].append(course_id)
-            f.seek(0)
-            f.write(json.dumps(oldtextbook, indent=4, sort_keys=True))
-    else:
-        with open(os.path.join(out, '{}.json'.format(isbn)), 'w') as f:
-            textbook['courses'] = [course_id]
-            f.write(json.dumps(textbook, indent=4, sort_keys=True))
 
 class TextbookScraper(object):
 
