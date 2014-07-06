@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import os
 import sys
 import logging
 from multiprocessing import Process, Queue
@@ -17,6 +17,16 @@ try:
     from config import USER, PASS, PROFILE
 except ImportError:
     logging.critical("No credientials found. Create a config.py file with USER, PASS, and PROFILE constants")
+
+try:
+    from config import LOG_DIR
+    logging.info("Using directory for logs: %s" % (LOG_DIR,))
+except ImportError:
+    LOG_DIR = "./logs"
+    logging.info("Using default directory for logs: ./logs")
+
+if not os.path.exists(LOG_DIR):
+    os.makedirs(LOG_DIR)
 
 
 class ScrapeJob(dict):
@@ -51,10 +61,10 @@ class JobManager(object):
         # Enforce a range of 1 - 10 threads with a default of 5
         self.config["threads"] = max(min(self.config.get("threads", 5), 10), 1)
         self.config["job"] = self.config.get("job", ScrapeJob())
-        
+
         # Divide up the work for the number of threads
         self.make_jobs()
-    
+
     def start(self):
         """Start running the scraping threads"""
 
@@ -77,7 +87,7 @@ class JobManager(object):
                 temp["subject_step"] = threads_per_letter
                 logging.info(u"Made job: {0}".format(temp))
                 self.jobs.put_nowait(temp)
-    
+
     def run_jobs(self, queue):
         """Initialize a SOLUS session and run the jobs"""
 
