@@ -41,15 +41,18 @@ class SolusParser(object):
 
     def dump_html(self):
         """Dumps the contents of the parser to a file"""
-        logging.critical("Encountered exception, dumping the HTML")
+        logging.critical("Encountered exception, attempting to dump the HTML")
+
         fname_template = "temp%d.html"
         i = 0
         filename = os.path.join(LOG_DIR, fname_template % i)
         while os.path.exists(os.path.join(LOG_DIR, fname_template % i)):
             i += 1
             filename = os.path.join(LOG_DIR, fname_template % i)
-        with open(filename, "w") as f:
+
+        with open(filename, "wb") as f:
             f.write(self.soup.prettify().encode("utf-8"))
+
         logging.critical("Dumped html to %s" % filename)
 
     def _clean_html(self, text):
