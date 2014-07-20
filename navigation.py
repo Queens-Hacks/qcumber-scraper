@@ -8,8 +8,12 @@ from time import sleep
 
 from parser import SolusParser
 
-MAX_RETRIES = 5
-RETRY_SLEEP_SECONDS = 5
+try:
+    from config import MAX_RETRIES, RETRY_SLEEP_SECONDS
+except ImportError:
+    MAX_RETRIES = 5
+    RETRY_SLEEP_SECONDS = 10
+    logging.info("MAX_RETRIES, RETRY_SLEEP_SECONDS not set in config, using defaults.")
 
 
 class SSLAdapter(HTTPAdapter):
@@ -257,7 +261,7 @@ class SolusSession(object):
             try:
                 result = method(*args, **kwargs)
                 break
-            except ConnectionError:
+            except (ConnectionError, ConnectionResetError):
                 if attempts <= MAX_RETRIES:
                     logging.warning("ConnectionError, attempt {0} of {1}".format(attempts,MAX_RETRIES))
                     sleep(RETRY_SLEEP_SECONDS)
