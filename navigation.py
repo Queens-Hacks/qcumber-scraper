@@ -3,8 +3,13 @@ import ssl
 import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.poolmanager import PoolManager
+from requests.exceptions import ConnectionError
+from time import sleep
 
 from parser import SolusParser
+
+MAX_RETRIES = 5
+RETRY_SLEEP_SECONDS = 5
 
 
 class SSLAdapter(HTTPAdapter):
@@ -233,13 +238,34 @@ class SolusSession(object):
 
     # -----------------------------General Purpose------------------------------------- #
 
+
     def _get(self, url, **kwargs):
-        self.latest_response = self.session.get(url, **kwargs)
+        self.latest_response = self._request_with_retries(getattr(self.session, 'get'), url, **kwargs)
         self._update_attrs()
 
+
     def _post(self, url, **kwargs):
-        self.latest_response = self.session.post(url, **kwargs)
+        self.latest_response = self._request_with_retries(getattr(self.session, 'post'), url, **kwargs)
         self._update_attrs()
+
+
+    def _request_with_retries(self, method, *args, **kwargs):
+        result = None
+        attempts = 0
+        while attempts <= MAX_RETRIES:
+            attempts += 1
+            try:
+                result = method(*args, **kwargs)
+                break
+            except ConnectionError:
+                if attempts <= MAX_RETRIES:
+                    logging.warning("ConnectionError, attempt {0} of {1}".format(attempts,MAX_RETRIES))
+                    sleep(RETRY_SLEEP_SECONDS)
+                else:
+                    logging.critical("ConnectionError, reached maxium number of retries.")
+                    raise
+        return result
+
 
     def _update_attrs(self):
         self.latest_text = self.latest_response.text
