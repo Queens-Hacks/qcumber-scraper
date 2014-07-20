@@ -84,6 +84,8 @@ Make sure you have activated your virtual environment (see above) before running
 Runnning a scrape
 =================
 
+The standard maintenance periods are Tuesdays and Thursdays from 5 am to 7:30 am and Sundays from 5 am to 10 am. There doesn't seem to be any place this is documented, but if you access the site during maintenance times it will tell you. You will need to run scrapes around these maintenance times.
+
 * Make sure your virtual environment is activated.
 * Make you you have created a config.py
 * To do a solus scrape run `python main.py`
