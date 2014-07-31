@@ -1,5 +1,7 @@
 import requests
 import re
+import sys
+import logging
 from writer import write_textbook
 from bs4 import BeautifulSoup
 
@@ -25,12 +27,12 @@ class TextbookScraper(object):
 
     def scrape(self):
 
-        print("Starting textbook scrape")
+        logging.info("Starting textbook scrape")
 
-        print("Getting a list of courses")
+        logging.info("Getting a list of courses")
         r = requests.get("http://www.campusbookstore.com/Textbooks/Booklists/")
 
-        print("Got list...")
+        logging.info("Got list...")
 
         b = BeautifulSoup(r.text)
         content = b.find("div", {"class":"thecontent"})
@@ -45,10 +47,10 @@ class TextbookScraper(object):
                 if m and m.group(1)[1].upper() in self.config['letters']:
                     temp.append((m.group(1), m.group(2), link.attrs["href"]))
 
-        print("Parsing courses")
+        logging.info("Parsing courses")
         for subject, course, link in temp:
 
-            print('Book for {} {}'.format(subject, course))
+            logging.info('Book for {} {}'.format(subject, course))
 
             response = requests.get(link)
             b = BeautifulSoup(response.text)
@@ -120,12 +122,23 @@ class TextbookScraper(object):
 
                     write_textbook(subject, course, textbook_attrs)
                     try:
-                        print("----Parsed book: {title} by {authors} ({isbn_13})".format(**textbook_attrs))
+                        logging.info("----Parsed book: {title} by {authors} ({isbn_13})".format(**textbook_attrs))
                     except:
-                        print("----Parsed book.")
+                        logging.info("----Parsed book.")
 
 
 if __name__ == '__main__':
+
+    root_logger = logging.getLogger()
+
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(logging.Formatter("[%(asctime)s][%(levelname)s][%(processName)s]: %(message)s"))
+
+    root_logger.addHandler(handler)
+    root_logger.setLevel(logging.INFO)
+
+    logging.getLogger("requests").setLevel(logging.WARNING)
+
     config = dict(
         letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     )
