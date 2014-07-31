@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import os
 import sys
 import logging
 from multiprocessing import Process, Queue
@@ -11,12 +11,6 @@ except ImportError:
 
 from navigation import SolusSession
 from scraper import SolusScraper
-
-# Get credientials
-try:
-    from config import USER, PASS, PROFILE
-except ImportError:
-    logging.critical("No credientials found. Create a config.py file with USER, PASS, and PROFILE constants")
 
 
 class ScrapeJob(dict):
@@ -51,10 +45,10 @@ class JobManager(object):
         # Enforce a range of 1 - 10 threads with a default of 5
         self.config["threads"] = max(min(self.config.get("threads", 5), 10), 1)
         self.config["job"] = self.config.get("job", ScrapeJob())
-        
+
         # Divide up the work for the number of threads
         self.make_jobs()
-    
+
     def start(self):
         """Start running the scraping threads"""
 
@@ -77,7 +71,7 @@ class JobManager(object):
                 temp["subject_step"] = threads_per_letter
                 logging.info(u"Made job: {0}".format(temp))
                 self.jobs.put_nowait(temp)
-    
+
     def run_jobs(self, queue):
         """Initialize a SOLUS session and run the jobs"""
 
@@ -117,19 +111,29 @@ class JobManager(object):
             t.join()
 
 
-if __name__ == "__main__":
+def _init_logging():
 
     root_logger = logging.getLogger()
 
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(logging.Formatter("[%(asctime)s][%(levelname)s][%(processName)s]: %(message)s"))
-
     root_logger.addHandler(handler)
     root_logger.setLevel(logging.INFO)
 
     logging.getLogger("requests").setLevel(logging.WARNING)
 
-    # Testing
+
+if __name__ == "__main__":
+
+    # Setup the logger before any logging happens
+    _init_logging()
+
+    # Get credientials
+    try:
+        from config import USER, PASS, PROFILE
+    except ImportError:
+        logging.critical("No credientials found. Create a config.py file with USER, PASS, and PROFILE constants")
+
     config = dict(
         name = "Shallow scrape with threading",
         description = "Scrapes the entire catalog using multiple threads",

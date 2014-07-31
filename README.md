@@ -23,7 +23,7 @@ This project has been designed to work with Python versions 2.7.x and 3.3.x You 
 
 Python 3.3.x is recommended.
 
-* Install a compatible version of Python. Use a package manager (Ex: `apt-get install python3 python3-dev`), 
+* Install a compatible version of Python. Use a package manager (Ex: `apt-get install python3 python3-dev`),
   or get the source from [http://www.python.org/download/](http://www.python.org/download/) if your distribution doesn't have the correct version of Python availible.
 * Make sure to also install the developement libraries (packages `python3-dev` or `python2-dev`). If you compile from source, these are already included.
 * Install extra libraries needed for compiling the `lxml` module: `apt-get install libxml2-dev libxslt1-dev`
@@ -55,7 +55,7 @@ A virtual environment is an isolated Python environment. It allows for per-progr
 * Copy the `git@github.com:[yourusername]/qcumber-scraper.git` link on the page.
 * Open up a terminal window.
 * Navigate to the folder in which you want to store your local copy of the scraper.
-* Clone the repository. `git clone [repository]`, where `[repository]` is the url you copied. 
+* Clone the repository. `git clone [repository]`, where `[repository]` is the url you copied.
 * You should now have a `qcumber-scraper` folder.
 
 
@@ -79,3 +79,19 @@ Make sure you have activated your virtual environment (see above) before running
 
 * `pip install -r requirements.txt`
 * If this command reports an error, check the log to see if you have all the dependencies required.
+
+
+Runnning a scrape
+=================
+
+* Make sure your virtual environment is activated.
+* Make you you have created a config.py
+* To do a solus scrape run `python main.py`
+* To do a textbook scrape run `python textbooks.py`
+
+### Better Logging ###
+
+For better logging and debugging later it is recommended to redirect the output to log files. Something like:
+`python main.py >logs/debug.log 2>logs/error.log`
+
+To watch the logs as they happen, first open 2 other terminals, and run `tailf logs/debug.log` in one, and `tailf logs/error.log` in the other. Then start the main scrape command like above.

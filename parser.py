@@ -1,7 +1,9 @@
 import re
+import os
 import bs4
 from datetime import datetime
 import logging
+from config import LOG_DIR
 
 class SolusParser(object):
     """Parses SOLUS's crappy HTML"""
@@ -16,7 +18,7 @@ class SolusParser(object):
     SUBJECT_INFO = re.compile("^\s*([^-\s]*)\s+-\s+(.*)$") # Subject - Abbreviation
     COURSE_INFO = re.compile("^([\S]+)\s+([\S]+)\s+-\s+(.*)$") # Abbreviation Code - Name
     TERM_INFO = re.compile("^([^\s]+)\s+(.+)$") # 2013 Fall
-    SECTION_INFO = re.compile("(\S+)-(\S+)\s+\((\S+)\)") #001-LEC (1234) 
+    SECTION_INFO = re.compile("(\S+)-(\S+)\s+\((\S+)\)") #001-LEC (1234)
     TIME_INFO = re.compile("(\d+:\d+[AP]M)") #1:30PM
     DATE_INFO = re.compile("^([\S]+)\s*-\s*([\S]+)$") #yyyy/mm/dd - yyyy/mm/dd
 
@@ -39,9 +41,19 @@ class SolusParser(object):
 
     def dump_html(self):
         """Dumps the contents of the parser to a file"""
-        logging.critical("Encountered exception, dumping the HTML")
-        with open("temp.html", "w") as f:
+        logging.critical("Encountered exception, attempting to dump the HTML")
+
+        fname_template = "temp%d.html"
+        i = 0
+        filename = os.path.join(LOG_DIR, fname_template % i)
+        while os.path.exists(os.path.join(LOG_DIR, fname_template % i)):
+            i += 1
+            filename = os.path.join(LOG_DIR, fname_template % i)
+
+        with open(filename, "wb") as f:
             f.write(self.soup.prettify().encode("utf-8"))
+
+        logging.critical("Dumped html to %s" % filename)
 
     def _clean_html(self, text):
         return text.replace('&nbsp;', ' ').strip()
