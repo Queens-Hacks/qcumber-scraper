@@ -13,7 +13,6 @@ try:
 except ImportError:
     MAX_RETRIES = 5
     RETRY_SLEEP_SECONDS = 10
-    logging.info("MAX_RETRIES, RETRY_SLEEP_SECONDS not set in config, using defaults.")
 
 
 class SSLAdapter(HTTPAdapter):
