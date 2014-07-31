@@ -12,32 +12,6 @@ except ImportError:
 from navigation import SolusSession
 from scraper import SolusScraper
 
-# Setup the logger before any logging happens
-if __name__ == '__main__':
-    root_logger = logging.getLogger()
-
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setFormatter(logging.Formatter("[%(asctime)s][%(levelname)s][%(processName)s]: %(message)s"))
-
-    root_logger.addHandler(handler)
-    root_logger.setLevel(logging.INFO)
-
-# Get credientials
-try:
-    from config import USER, PASS, PROFILE
-except ImportError:
-    logging.critical("No credientials found. Create a config.py file with USER, PASS, and PROFILE constants")
-
-try:
-    from config import LOG_DIR
-    logging.info("Using directory for logs: %s" % (LOG_DIR,))
-except ImportError:
-    LOG_DIR = "./logs"
-    logging.info("Using default directory for logs: ./logs")
-
-if not os.path.exists(LOG_DIR):
-    os.makedirs(LOG_DIR)
-
 
 class ScrapeJob(dict):
     """
@@ -137,9 +111,29 @@ class JobManager(object):
             t.join()
 
 
+def _init_logging():
+
+    root_logger = logging.getLogger()
+
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(logging.Formatter("[%(asctime)s][%(levelname)s][%(processName)s]: %(message)s"))
+    root_logger.addHandler(handler)
+    root_logger.setLevel(logging.INFO)
+
+    logging.getLogger("requests").setLevel(logging.WARNING)
+
+
 if __name__ == "__main__":
 
-    # Testing
+    # Setup the logger before any logging happens
+    _init_logging()
+
+    # Get credientials
+    try:
+        from config import USER, PASS, PROFILE
+    except ImportError:
+        logging.critical("No credientials found. Create a config.py file with USER, PASS, and PROFILE constants")
+
     config = dict(
         name = "Shallow scrape with threading",
         description = "Scrapes the entire catalog using multiple threads",
