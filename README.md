@@ -28,6 +28,7 @@ Python 3.3.x is recommended.
 * Make sure to also install the developement libraries (packages `python3-dev` or `python2-dev`). If you compile from source, these are already included.
 * Install extra libraries needed for compiling the `lxml` module:
     - Most Debian-based distros: `apt-get install libxml2-dev libxslt1-dev`
+    - Red Hat/Fedora: `yum install libxml2-devel libxslt-devel`
     - Arch: `pacman -S libxml2 libxslt`
 
 ### Git and a Github account ###
