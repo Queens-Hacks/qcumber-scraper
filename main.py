@@ -59,8 +59,7 @@ class JobManager(object):
 
         job = self.config["job"]
         letters = job["letters"]
-
-        threads_per_letter = int((self.config["threads"] - 1)/len(letters) + 1)
+        threads_per_letter = max(self.config.get("threads_per_letter", int((self.config["threads"] - 1)/len(letters) + 1)), 1)
 
         for l in letters:
             job_letter = ScrapeJob(job)
