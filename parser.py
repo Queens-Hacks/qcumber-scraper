@@ -15,7 +15,7 @@ class SolusParser(object):
     ALL_SECTION_TABLES = re.compile("CLASS\$scroll\$[0-9]+")
 
     # For getting information out of the page
-    SUBJECT_INFO = re.compile("^\s*([^-\s]*)\s+-\s+(.*)$") # Subject - Abbreviation
+    SUBJECT_INFO = re.compile("^\s*([^-\s]*)\s+-\s+(.*)$") # Abbreviation - Subject
     COURSE_INFO = re.compile("^([\S]+)\s+([\S]+)\s+-\s+(.*)$") # Abbreviation Code - Name
     TERM_INFO = re.compile("^([^\s]+)\s+(.+)$") # 2013 Fall
     SECTION_INFO = re.compile("(\S+)-(\S+)\s+\((\S+)\)") #001-LEC (1234)

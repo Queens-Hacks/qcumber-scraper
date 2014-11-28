@@ -35,7 +35,7 @@ class JobManager(object):
     """Handles dividing up the scraping work and starting the scraper threads"""
 
     def __init__(self, user, passwd, config):
-        """Initialize the Scraper object"""
+        """Divide the work up into ScrapeJobs"""
 
         self.user = user
         self.passwd = passwd
@@ -136,8 +136,8 @@ if __name__ == "__main__":
     config = dict(
         name = "Shallow scrape with threading",
         description = "Scrapes the entire catalog using multiple threads",
-        threads = 8,
-        job = ScrapeJob(letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ", deep=False, subject_start=0),
+        threads = 4,
+        job = ScrapeJob(letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ", deep=False),
     )
 
     # Start scraping
