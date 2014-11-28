@@ -26,7 +26,9 @@ Python 3.3.x is recommended.
 * Install a compatible version of Python. Use a package manager (Ex: `apt-get install python3 python3-dev`),
   or get the source from [http://www.python.org/download/](http://www.python.org/download/) if your distribution doesn't have the correct version of Python availible.
 * Make sure to also install the developement libraries (packages `python3-dev` or `python2-dev`). If you compile from source, these are already included.
-* Install extra libraries needed for compiling the `lxml` module: `apt-get install libxml2-dev libxslt1-dev`
+* Install extra libraries needed for compiling the `lxml` module:
+    - Most Debian-based distros: `apt-get install libxml2-dev libxslt1-dev`
+    - Arch: `pacman -S libxml2 libxslt`
 
 ### Git and a Github account ###
 
