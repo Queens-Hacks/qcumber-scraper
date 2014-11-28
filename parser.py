@@ -35,8 +35,6 @@ class SolusParser(object):
 
     def update_html(self, text):
         """Feed new data to the parser"""
-        text = text.replace('<abbr class="PTUNDERLINE">I</abbr>', 'I')  # XXX: Dirty hack to fix CISC scraping (it breaks without this)
-
         self.soup = bs4.BeautifulSoup(text, self._souplib)
 
     def dump_html(self):
@@ -88,7 +86,20 @@ class SolusParser(object):
 
     def subject_action(self, subject_unique):
         """Return the action for the subject unique"""
-        tag = self.soup.find("a", id=self.ALL_SUBJECTS, text=subject_unique)
+
+        # XXX: Less dirty hack
+        # Using 'find(text="blah")' compares "blah" against the '.string' property of tag candidates, not the '.text' property
+        # This can be seen here: http://bazaar.launchpad.net/~leonardr/beautifulsoup/bs4/view/head:/bs4/element.py#L1520
+        # This breaks searching for text in tags with child tags.
+        # A workaround is to use a custom function to explicitly match the text
+        # There is an open bug for this behaviour at https://bugs.launchpad.net/beautifulsoup/+bug/1366856
+        # Once the bug is fixed, the original code should be put back (it's faster and cleaner)
+
+        # tag = self.soup.find("a", id=self.ALL_SUBJECTS, text=subject_unique)
+        def match_subject(tag):
+            return tag.name == "a" and tag.text == subject_unique and self.ALL_SUBJECTS.match(tag["id"]) is not None if hasattr(tag, "id") else False
+        tag = self.soup.find(match_subject)
+
         if not tag:
             logging.warning(u"Couldn't find the subject '{0}'".format(subject_unique))
             return None
