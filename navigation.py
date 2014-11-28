@@ -260,7 +260,7 @@ class SolusSession(object):
             try:
                 result = method(*args, **kwargs)
                 break
-            except (ConnectionError, ConnectionResetError):
+            except (ConnectionError):
                 if attempts <= MAX_RETRIES:
                     logging.warning("ConnectionError, attempt {0} of {1}".format(attempts,MAX_RETRIES))
                     sleep(RETRY_SLEEP_SECONDS)
