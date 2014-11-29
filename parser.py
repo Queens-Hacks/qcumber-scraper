@@ -185,7 +185,7 @@ class SolusParser(object):
         return ret
 
     def all_courses(self, start=0, end=None, step=1):
-        """Returns a list of all the uniques of the courses"""
+        """Returns a list of dicts containing the code and unique of the courses"""
 
         # Find all course tags
         tags = self.soup.find_all("a", id=self.ALL_COURSES)
@@ -198,7 +198,7 @@ class SolusParser(object):
 
         ret = []
         for i in range(start, end, step):
-            ret.append(tags[i].get_text())
+            ret.append(dict(code=tags[i].get_text().strip(), _unique=tags[i].get_text()))
 
         return ret
 

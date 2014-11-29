@@ -66,8 +66,8 @@ class SolusScraper(object):
         all_courses = self.session.parser.all_courses(start=start, end=end)
 
         # Iterate over all courses
-        for course_unique in all_courses:
-            self.session.open_course(course_unique)
+        for course in all_courses:
+            self.session.open_course(course["_unique"])
 
             course_attrs = self.session.parser.course_attrs()
             course_attrs['basic']['subject'] = subject['abbreviation']
