@@ -1,0 +1,33 @@
+# This file holds a tree of letters, subjects, courses, terms, 
+# and sections to test.
+
+A:
+  ANAT:
+    449B:
+      2015 Winter:
+        - 3233
+C:
+  CISC:
+    226:
+      2015 Winter:
+        - 5830
+    121:
+      2014 Fall:
+        - 5830
+        - 5195
+      2015 Winter:
+        - 8424
+        - 8425
+M:
+  MECH:
+    420:
+      2015 Winter:
+        - 3734
+D:
+  DEVS:
+    220:
+      2015 Winter:
+        - 8152
+X:
+  XRAY:
+    410B: ~
