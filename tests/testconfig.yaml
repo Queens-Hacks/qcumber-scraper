@@ -1,19 +1,37 @@
-# This file holds a tree of letters, subjects, courses, terms, 
-# and sections to test.
+# Use this file to configure what should be tested
+# Specify a tree of alphanums, subjects, courses, terms, and sections to test.
+#
+# Alphanums - use a single character
+# Subjects - use the abbreviation
+# Courses - Use the course code
+# Term - Use what you would see on SOLUS ("year season")
+# Section - Use the section ID (the number in the brackets)
+#
+# Ex:
+# ```
+# A:
+#   ANAT:
+#     499B:
+#       2015 Winter:
+#         - 3233
+# ```
 
 A:
   ANAT:
-    449B:
+    499B:
       2015 Winter:
         - 3233
 C:
+  CIVL:
+    371:
+      - 2014 Fall
   CISC:
     226:
       2015 Winter:
         - 5830
     121:
       2014 Fall:
-        - 5830
+        - 5193
         - 5195
       2015 Winter:
         - 8424
@@ -30,4 +48,19 @@ D:
         - 8152
 X:
   XRAY:
-    410B: ~
+    - 410B
+L:
+  - LING
+Z: ~
+
+# Testing garbage input
+#GARBAGE: ~
+#G:
+#  GARBAGE: ~
+#  GEOL:
+#    GARBAGE: ~
+#    104:
+#      GARBAGE: ~
+#      2015 Winter:
+#        - GARBAGE
+#        - 3794
