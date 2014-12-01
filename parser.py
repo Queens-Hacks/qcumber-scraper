@@ -299,9 +299,9 @@ class SolusParser(object):
             if link_tag:
                 m = self.SECTION_INFO.search(link_tag.get_text())
                 if m:
-                    basic["solus_id"] = m.group(1)
+                    basic["class_num"] = m.group(1)
                     basic["type"] = m.group(2)
-                    basic["class_num"] = m.group(3)
+                    basic["solus_id"] = m.group(3)
                     section_data["_unique"] = link_tag.get_text()
                 else:
                     logging.warning("Found section link but couldn't extract information from it")
