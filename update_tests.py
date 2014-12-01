@@ -33,6 +33,9 @@ class TestUpdater(object):
     def __init__(self, config_file, user, passwd):
         """Initialize the session to grab the data with"""
 
+        # Load the config
+        self.load_config(config_file)
+
         # Initialize the session
         try:
             session = SolusSession(user, passwd)
@@ -42,14 +45,15 @@ class TestUpdater(object):
             raise
 
         self.session = session
+
+    def load_config(self, config_file):
+        """Load the config file"""
         try:
             with open(config_file) as f:
                 self.config = yaml.load(f.read())
         except EnvironmentError as e:
             logging.critical("Couldn't load config file '{}'".format(config_file))
             raise
-
-        print (self.config)
 
     def start(self):
         """Starts updating the local data"""
@@ -83,11 +87,12 @@ class TestUpdater(object):
 
         # Iterate over all subjects
         for subject, courses in iterkeyvalue(subjects):
-            if not all_subjects.get(subject, None):
+
+            curr_subject = all_subjects.get(subject)
+            if curr_subject is None:
                 if subject is not None:
                     logging.warning("Couldn't find subject {} specified in config file".format(subject))
                 continue
-            curr_subject = all_subjects[subject]
 
             logging.info(u"--Subject: {abbreviation} - {title}".format(**curr_subject))
 
@@ -106,11 +111,12 @@ class TestUpdater(object):
         # Iterate over all courses
         for course, terms in iterkeyvalue(courses):
             course = str(course) if course is not None else None # TODO: Fix once when parsing the config file
-            if not all_courses.get(course, None):
+
+            curr_course = all_courses.get(course)
+            if curr_course is None:
                 if course is not None:
                     logging.warning("Couldn't find course {} specified in config file".format(course))
                 continue
-            curr_course = all_courses[course]
 
             self.session.open_course(curr_course["_unique"])
 
@@ -130,11 +136,11 @@ class TestUpdater(object):
         all_terms = {"{year} {season}".format(**x): x for x in parsed_terms}
 
         for term, sections in iterkeyvalue(terms):
-            if not all_terms.get(term, None):
+            curr_term = all_terms.get(term)
+            if curr_term is None:
                 if term is not None:
                     logging.warning("Couldn't find term {} specified in config file".format(term))
                 continue
-            curr_term = all_terms[term]
 
             logging.info(u"------Term: {year} - {season}".format(**curr_term))
             self.session.switch_to_term(curr_term["_unique"])
@@ -154,11 +160,11 @@ class TestUpdater(object):
         for section, _ in iterkeyvalue(sections):
             section = str(section) if section is not None else None #TODO: ugh
 
-            if not all_sections.get(section, None):
+            curr_section = all_sections.get(section)
+            if curr_section is None:
                 if section is not None:
                     logging.warning("Couldn't find section {} specified in config file".format(section))
                 continue
-            curr_section = all_sections[section]
 
             logging.info(u"--------Section: {class_num}-{type} ({solus_id}) -- {status}".format(**curr_section["basic"]))
 
