@@ -165,6 +165,21 @@ class SolusParser(object):
 
     #--------------------------Get all uniques (and basic data)---------------------
 
+    def optimize_filter(func):
+        """
+        Optimize for the case where an valid, yet empty filter is passed into
+        an `all_*` function (by returning an empty list)
+        """
+
+        def wrapper(*args, **kwargs):
+            filter_ = kwargs.get("filter_", None)
+            if filter_ is not None and not len(filter_):
+                return []
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    @optimize_filter
     def all_alphanums(self, filter_=None):
         """
         Returns a list of alphanums.
@@ -174,25 +189,19 @@ class SolusParser(object):
 
         If `filter_` is specified, only alphanums with in `filter_` will be returned
         """
-        # Optimize for empty filter
-        if filter_ is not None and not len(filter_):
-            return []
 
         # Find all subjects on the page
         tags = self.soup.find_all("a", id=self.ALL_ALPHANUMS)
 
         return map(lambda x: x.get_text(), tags)
 
+    @optimize_filter
     def all_subjects(self, start=0, end=None, step=1, filter_=None):
         """
         Returns a list of dicts containing the name, abbreviation, and unique of the subjects
 
         If `filter_` is specified, only subjects with `abbreviation`s in `filter_` will be returned
         """
-
-        # Optimize for empty filter
-        if filter_ is not None and not len(filter_):
-            return []
 
         # Find all subjects on the page
         tags = self.soup.find_all("a", id=self.ALL_SUBJECTS)
@@ -222,16 +231,13 @@ class SolusParser(object):
 
         return ret
 
+    @optimize_filter
     def all_courses(self, start=0, end=None, step=1, filter_=None):
         """
         Returns a list of dicts containing the code and unique of the courses
 
         If `filter_` is specified, only courses with `code`s in `filter_` will be returned
         """
-
-        # Optimize for empty filter
-        if filter_ is not None and not len(filter_):
-            return []
 
         # Find all course tags
         tags = self.soup.find_all("a", id=self.ALL_COURSES)
@@ -252,6 +258,7 @@ class SolusParser(object):
 
         return ret
 
+    @optimize_filter
     def all_terms(self, filter_=None):
         """
         Returns a list of dicts containing term data (year, season, _unique) in the current course.
@@ -259,10 +266,6 @@ class SolusParser(object):
 
         If `filter_` is specified, only terms with `{year} {season}`s in `filter_` will be returned
         """
-
-        # Optimize for empty filter
-        if filter_ is not None and not len(filter_):
-            return []
 
         DROPDOWN_ID = "DERIVED_SAA_CRS_TERM_ALT"
 
@@ -284,6 +287,7 @@ class SolusParser(object):
 
         return ret
 
+    @optimize_filter
     def all_section_data(self, filter_=None):
         """
         Returns a list of all the sections data
@@ -314,10 +318,6 @@ class SolusParser(object):
             }, ...
         ]
         """
-
-        # Optimize for empty filter
-        if filter_ is not None and not len(filter_):
-            return []
 
         LINK_FORMAT = "CLASS_SECTION${0}"
 
