@@ -183,8 +183,16 @@ class SolusParser(object):
 
         return map(lambda x: x.get_text(), tags)
 
-    def all_subjects(self, start=0, end=None, step=1):
-        """Returns a list of dicts containing the name, abbreviation, and unique of the subjects"""
+    def all_subjects(self, start=0, end=None, step=1, filter_=None):
+        """
+        Returns a list of dicts containing the name, abbreviation, and unique of the subjects
+
+        If `filter_` is specified, only subjects with `abbreviation`s in `filter_` will be returned
+        """
+
+        # Optimize for empty filter
+        if filter_ is not None and not len(filter_):
+            return []
 
         # Find all subjects on the page
         tags = self.soup.find_all("a", id=self.ALL_SUBJECTS)
@@ -208,13 +216,22 @@ class SolusParser(object):
             abbr = m.group(1)
             title = m.group(2)
 
-            # Add the discovered information to the return list
-            ret.append(dict(title=title, abbreviation=abbr, _unique=tags[i].get_text()))
+            # Check against the filter_ and add to the return list
+            if filter_ is None or abbr in filter_:
+                ret.append(dict(title=title, abbreviation=abbr, _unique=tags[i].get_text()))
 
         return ret
 
-    def all_courses(self, start=0, end=None, step=1):
-        """Returns a list of dicts containing the code and unique of the courses"""
+    def all_courses(self, start=0, end=None, step=1, filter_=None):
+        """
+        Returns a list of dicts containing the code and unique of the courses
+
+        If `filter_` is specified, only courses with `code`s in `filter_` will be returned
+        """
+
+        # Optimize for empty filter
+        if filter_ is not None and not len(filter_):
+            return []
 
         # Find all course tags
         tags = self.soup.find_all("a", id=self.ALL_COURSES)
@@ -226,16 +243,26 @@ class SolusParser(object):
             end = min(end, len(tags))
 
         ret = []
+        # Check against the filter_ and add to the return list
         for i in range(start, end, step):
-            ret.append(dict(code=tags[i].get_text().strip(), _unique=tags[i].get_text()))
+            unique = tags[i].get_text()
+            code = unique.strip()
+            if filter_ is None or code in filter_:
+                ret.append(dict(code=code, _unique=unique))
 
         return ret
 
-    def all_terms(self):
+    def all_terms(self, filter_=None):
         """
         Returns a list of dicts containing term data (year, season, _unique) in the current course.
         Returns an empty list if the class isn't scheduled
+
+        If `filter_` is specified, only terms with `{year} {season}`s in `filter_` will be returned
         """
+
+        # Optimize for empty filter
+        if filter_ is not None and not len(filter_):
+            return []
 
         DROPDOWN_ID = "DERIVED_SAA_CRS_TERM_ALT"
 
@@ -250,13 +277,18 @@ class SolusParser(object):
                     logging.warning("Couldn't extract data from term dropdown")
                     continue
 
-                ret.append(dict(year=m.group(1), season=m.group(2), _unique=x.get_text()))
+                # Check against the filter_ and add to the return list
+                filter_check = "{0} {1}".format(*m.groups())
+                if filter_ is None or filter_check in filter_:
+                    ret.append(dict(year=m.group(1), season=m.group(2), _unique=x.get_text()))
 
         return ret
 
-    def all_section_data(self):
+    def all_section_data(self, filter_=None):
         """
         Returns a list of all the sections data
+
+        If `filter_` is specified, only sections with `solus_id`s in `filter_` will be returned
 
         Format:
         [
@@ -283,6 +315,10 @@ class SolusParser(object):
         ]
         """
 
+        # Optimize for empty filter
+        if filter_ is not None and not len(filter_):
+            return []
+
         LINK_FORMAT = "CLASS_SECTION${0}"
 
         tables = self.soup.find_all("table", id=self.ALL_SECTION_TABLES)
@@ -306,6 +342,11 @@ class SolusParser(object):
                 else:
                     logging.warning("Found section link but couldn't extract information from it")
                     continue
+
+                # Check against the filter_
+                if filter_ is not None and basic["solus_id"] not in filter_:
+                    continue
+
             else:
                 logging.warning("Couldn't find the section link at the specified index")
                 continue
