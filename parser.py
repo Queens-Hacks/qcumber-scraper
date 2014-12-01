@@ -193,7 +193,13 @@ class SolusParser(object):
         # Find all subjects on the page
         tags = self.soup.find_all("a", id=self.ALL_ALPHANUMS)
 
-        return map(lambda x: x.get_text(), tags)
+        ret = map(lambda x: x.get_text(), tags)
+
+        # Filter results
+        if filter_ is not None:
+            return filter(lambda x: x in filter_, ret)
+
+        return ret
 
     @optimize_filter
     def all_subjects(self, start=0, end=None, step=1, filter_=None):
