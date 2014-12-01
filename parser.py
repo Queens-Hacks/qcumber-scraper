@@ -9,6 +9,7 @@ class SolusParser(object):
     """Parses SOLUS's crappy HTML"""
 
     # For getting the correct tags
+    ALL_ALPHANUMS = re.compile("DERIVED_SSS_BCC_SSR_ALPHANUM_\S+")
     ALL_SUBJECTS = re.compile("DERIVED_SSS_BCC_GROUP_BOX_1\$84\$\$[0-9]+")
     ALL_COURSES = re.compile("CRSE_NBR\$[0-9]+")
     ALL_SECTIONS = re.compile("CLASS_SECTION\$[0-9]+")
@@ -84,6 +85,16 @@ class SolusParser(object):
 
     #---------------------Get actions from uniques-----------------------
 
+    def alphanum_action(self, alphanum_unique):
+        """Return the action to go to a letter/number"""
+        tag = self.soup.find("a", id=self.ALL_ALPHANUMS, text=alphanum_unique)
+        if not tag:
+            logging.warning(u"Couldn't find the alphanum '{0}'".format(alphanum_unique))
+            return None
+
+        return tag["id"]
+
+
     def subject_action(self, subject_unique):
         """Return the action for the subject unique"""
 
@@ -153,6 +164,24 @@ class SolusParser(object):
         return None
 
     #--------------------------Get all uniques (and basic data)---------------------
+
+    def all_alphanums(self, filter_=None):
+        """
+        Returns a list of alphanums.
+
+        The alphanum's _unique is the same as it's common name so there's no need
+        to return a dict
+
+        If `filter_` is specified, only alphanums with in `filter_` will be returned
+        """
+        # Optimize for empty filter
+        if filter_ is not None and not len(filter_):
+            return []
+
+        # Find all subjects on the page
+        tags = self.soup.find_all("a", id=self.ALL_ALPHANUMS)
+
+        return map(lambda x: x.get_text(), tags)
 
     def all_subjects(self, start=0, end=None, step=1):
         """Returns a list of dicts containing the name, abbreviation, and unique of the subjects"""

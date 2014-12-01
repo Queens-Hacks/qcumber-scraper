@@ -130,7 +130,12 @@ class SolusSession(object):
     def select_alphanum(self, alphanum):
         """Navigates to a letter/number"""
         logging.debug(u"Selecting letter {0}".format(alphanum))
-        self._catalog_post(u'DERIVED_SSS_BCC_SSR_ALPHANUM_{0}'.format(alphanum.upper()))
+
+        action = self.parser.alphanum_action(alphanum)
+        if not action:
+            raise Exception(u"Tried to navigate to an invalid alphanum")
+
+        self._catalog_post(action)
 
         if self.recovery_state < 0:
             self.recovery_stack[0] = alphanum
