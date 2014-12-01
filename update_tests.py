@@ -4,20 +4,25 @@ import yaml
 import sys
 from navigation import SolusSession
 
+def str_unless_none(obj):
+    """Convert an object to a string unless it's None"""
+    if obj is not None:
+        return str(obj)
+    return obj
+
 def iterkeyvalue(obj):
     """Make it easy to iterate over dicts, lists, and strings"""
     if isinstance(obj, dict):
         for k, v in obj.items():
-            yield k, v
+            yield str_unless_none(k), v
     elif isinstance (obj, list):
         for x in obj:
-            yield x, None
+            yield str_unless_none(x), None
     else:
-        yield obj, None
+        yield str_unless_none(obj), None
 
 def get_filter(obj):
     """Pick out the list of objects to filter by from a config item"""
-    # TODO: Fix str mapping once when parsing the config file
     if obj is None:
         return [] # Empty list = accept nothing (optimized in the parser)
     elif hasattr(obj, "keys"):
@@ -110,7 +115,6 @@ class TestUpdater(object):
 
         # Iterate over all courses
         for course, terms in iterkeyvalue(courses):
-            course = str(course) if course is not None else None # TODO: Fix once when parsing the config file
 
             curr_course = all_courses.get(course)
             if curr_course is None:
@@ -158,7 +162,6 @@ class TestUpdater(object):
         # Don't really need the `iterkeyvalue` but it makes the config
         # parsing a litte more lax so whatever
         for section, _ in iterkeyvalue(sections):
-            section = str(section) if section is not None else None #TODO: ugh
 
             curr_section = all_sections.get(section)
             if curr_section is None:
