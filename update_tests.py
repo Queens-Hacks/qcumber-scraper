@@ -21,11 +21,11 @@ def get_filter(obj):
     if obj is None:
         return [] # Empty list = accept nothing (optimized in the parser)
     elif hasattr(obj, "keys"):
-        return map(str, obj.keys())
+        return list(map(str, obj.keys()))
     elif isinstance(obj, list):
-        return map(str, obj)
+        return list(map(str, obj))
     else:
-        return (str(obj),)
+        return tuple(str(obj))
 
 class TestUpdater(object):
     """Dump HTML and the scraped data"""
@@ -64,7 +64,7 @@ class TestUpdater(object):
     def scrape_alphanums(self):
         """Scrape alphanums"""
 
-        all_alphanums = self.session.parser.all_alphanums(filter_=get_filter(self.config))
+        all_alphanums = list(self.session.parser.all_alphanums(filter_=get_filter(self.config)))
 
         for alphanum, subjects in iterkeyvalue(self.config):
 
