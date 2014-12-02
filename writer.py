@@ -38,7 +38,7 @@ def write_course(course):
     merged_course = course['basic'].copy()
     merged_course.update(course['extra'])
 
-    filename = '{subject}-{number}.json'.format(**merged_course)
+    filename = '{subject}_{number}.json'.format(**merged_course)
 
     write_json_file(course, filename, 'courses')
 
@@ -54,7 +54,7 @@ def write_section(section):
 
     merged_section = section['basic']
 
-    filename = '{year}-{season}-{subject}-{course}-({solus_id}).json'.format(**merged_section)
+    filename = '{year}_{season}_{subject}_{course}_({solus_id}).json'.format(**merged_section)
 
     write_json_file(section, filename, 'sections')
 
