@@ -248,12 +248,12 @@ class SolusSession(object):
 
 
     def _get(self, url, **kwargs):
-        self.latest_response = self._request_with_retries(getattr(self.session, 'get'), url, **kwargs)
+        self.latest_response = self._request_with_retries(self.session.get, url, **kwargs)
         self._update_attrs()
 
 
     def _post(self, url, **kwargs):
-        self.latest_response = self._request_with_retries(getattr(self.session, 'post'), url, **kwargs)
+        self.latest_response = self._request_with_retries(self.session.post, url, **kwargs)
         self._update_attrs()
 
 
