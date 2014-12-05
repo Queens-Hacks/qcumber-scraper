@@ -30,7 +30,7 @@ class SolusParser(object):
             logging.info("Testing mode is enabled")
 
         self.soup = None
-        self.raw_html = None
+        self._raw_html = None
         self.testing_mode = testing_mode
         self._souplib = souplib
 
@@ -48,16 +48,15 @@ class SolusParser(object):
     def get_raw_html(self):
         """Return the raw HTML BeautifulSoup is currently parsing"""
         if self.testing_mode:
-            return self.raw_html
+            return self._raw_html
         else:
             raise Exception ("Can't ask for raw html while not in testing mode")
-
 
     def update_html(self, html):
         """Feed new data to the parser"""
         self.soup = bs4.BeautifulSoup(html, self._souplib)
         if self.testing_mode:
-            self.raw_html = html
+            self._raw_html = html
 
     def dump_html(self):
         """Dumps the contents of the parser to a file"""
