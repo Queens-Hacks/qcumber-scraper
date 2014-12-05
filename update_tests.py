@@ -43,7 +43,7 @@ class TestUpdater(object):
 
         # Initialize the session
         try:
-            session = SolusSession(user, passwd)
+            session = SolusSession(user, passwd, souplib="lxml", testing_mode=True)
             pass
         except EnvironmentError as e:
             logging.critical("Couldn't log in, can't update tests")

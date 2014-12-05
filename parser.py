@@ -26,6 +26,9 @@ class SolusParser(object):
     def __init__(self, souplib='lxml', testing_mode=False):
         """Initialize the parser"""
 
+        if testing_mode:
+            logging.info("Testing mode is enabled")
+
         self.soup = None
         self.raw_html = None
         self.testing_mode = testing_mode
