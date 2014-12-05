@@ -23,20 +23,38 @@ class SolusParser(object):
     TIME_INFO = re.compile("(\d+:\d+[AP]M)") #1:30PM
     DATE_INFO = re.compile("^([\S]+)\s*-\s*([\S]+)$") #yyyy/mm/dd - yyyy/mm/dd
 
-    def __init__(self):
+    def __init__(self, souplib='lxml', testing_mode=False):
+        """Initialize the parser"""
+
         self.soup = None
-        self._souplib = 'lxml'
+        self.raw_html = None
+        self.testing_mode = testing_mode
+        self._souplib = souplib
 
         # Prefer lxml, fall back to built in parser
         try:
             bs4.BeautifulSoup("", self._souplib)
         except bs4.FeatureNotFound as e:
-            logging.warning(u"Not using {0} for parsing, using builtin parser instead".format(self._souplib))
-            self._souplib = "html.parser"
+            if self.testing_mode:
+                logging.critical(u"Can't find specicified parsing library {0}".format(self._souplib))
+                raise
+            else:
+                logging.warning(u"Not using {0} for parsing, using builtin parser instead".format(self._souplib))
+                self._souplib = "html.parser"
 
-    def update_html(self, text):
+    def get_raw_html(self):
+        """Return the raw HTML BeautifulSoup is currently parsing"""
+        if self.testing_mode:
+            return self.raw_html
+        else:
+            raise Exception ("Can't ask for raw html while not in testing mode")
+
+
+    def update_html(self, html):
         """Feed new data to the parser"""
-        self.soup = bs4.BeautifulSoup(text, self._souplib)
+        self.soup = bs4.BeautifulSoup(html, self._souplib)
+        if self.testing_mode:
+            self.raw_html = html
 
     def dump_html(self):
         """Dumps the contents of the parser to a file"""
