@@ -242,12 +242,12 @@ class SolusParser(object):
                 "classes": [
                     {
                         'day_of_week': 1-7, starting with monday
-                        'start_time': datetime object
-                        'end_time': datetime object
+                        'start_time': datetime.time object
+                        'end_time': datetime.time object
                         'location': room
                         'instructors': [instructor names]
-                        'term_start': datetime object
-                        'term_end': datetime object
+                        'term_start': datetime.date object
+                        'term_end': datetime.date object
                     }, ...
                 ]
             }, ...
@@ -471,12 +471,12 @@ class SolusParser(object):
         [
             {
                 'day_of_week': 1-7, starting with monday, None for 'TBA' and other
-                'start_time': datetime object
-                'end_time': datetime object
+                'start_time': datetime.time object
+                'end_time': datetime.time object
                 'location': room
                 'instructors': [instructor names]
-                'term_start': datetime object
-                'term_end': datetime object
+                'term_start': datetime.date object
+                'term_end': datetime.date object
             },
         ]
         """
@@ -528,14 +528,14 @@ class SolusParser(object):
 
             # Class start/end times
             m = self.TIME_INFO.search(values[x+1])
-            start_time = datetime.strptime(m.group(1), "%I:%M%p") if m else None
+            start_time = datetime.strptime(m.group(1), "%I:%M%p").time() if m else None
             m = self.TIME_INFO.search(values[x+2])
-            end_time = datetime.strptime(m.group(1), "%I:%M%p") if m else None
+            end_time = datetime.strptime(m.group(1), "%I:%M%p").time() if m else None
 
             # Class start/end dates
             m = self.DATE_INFO.search(values[x+4])
-            term_start = datetime.strptime(m.group(1), "%Y/%m/%d") if m else None
-            term_end = datetime.strptime(m.group(2), "%Y/%m/%d") if m else None
+            term_start = datetime.strptime(m.group(1), "%Y/%m/%d").date() if m else None
+            term_end = datetime.strptime(m.group(2), "%Y/%m/%d").date() if m else None
 
             sections = []
 
