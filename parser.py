@@ -24,7 +24,13 @@ class SolusParser(object):
     DATE_INFO = re.compile("^([\S]+)\s*-\s*([\S]+)$") #yyyy/mm/dd - yyyy/mm/dd
 
     def __init__(self, souplib='lxml', testing_mode=False):
-        """Initialize the parser"""
+        """
+        Initialize the parser
+
+        testing_mode implies that the raw html will be stored for later
+        retreval when the html is updated and an exception will raised if the
+        specified souplib isn't found.
+        """
 
         if testing_mode:
             logging.info("Testing mode is enabled")

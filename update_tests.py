@@ -6,6 +6,7 @@ import sys
 import os
 import datetime
 from navigation import SolusSession
+from parser import SolusParser
 
 def str_unless_none(obj):
     """Convert an object to a string unless it's None"""
@@ -71,8 +72,7 @@ class TestUpdater(object):
 
         # Initialize the session
         try:
-            session = SolusSession(user, passwd, souplib="lxml", testing_mode=True)
-            pass
+            session = SolusSession(user, passwd, parser=SolusParser(souplib="lxml", testing_mode=True))
         except EnvironmentError as e:
             logging.critical("Couldn't log in, can't update tests")
             raise

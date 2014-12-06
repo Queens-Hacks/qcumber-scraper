@@ -37,14 +37,14 @@ class SolusSession(object):
     continue_url = "SAML2/Redirect/SSO"
     course_catalog_url = "https://saself.ps.queensu.ca/psc/saself/EMPLOYEE/HRMS/c/SA_LEARNER_SERVICES.SSS_BROWSE_CATLG_P.GBL"
 
-    def __init__(self, user, password, **kwargs):
+    def __init__(self, user, password, parser=SolusParser()):
         self.session = requests.session()
 
         # Use SSL version 1
         self.session.mount('https://', SSLAdapter(ssl_version=ssl.PROTOCOL_TLSv1))
 
         # Parser
-        self._parser = SolusParser(**kwargs)
+        self._parser = parser
         self._update_parser = False
 
         # Response data
