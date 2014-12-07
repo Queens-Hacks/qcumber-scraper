@@ -5,6 +5,9 @@ import json
 import sys
 import os
 import datetime
+
+# Add the parent directory (with all the code) to the path
+sys.path.insert(1, os.path.join(sys.path[0], ".."))
 from navigation import SolusSession
 from parser import SolusParser
 
@@ -257,4 +260,4 @@ if __name__ == "__main__":
     except ImportError:
         logging.critical("No credientials found. Create a config.py file with USER and PASS constants")
 
-    TestUpdater("tests/testconfig.yaml", "tests/out", USER, PASS).start()
+    TestUpdater("testconfig.yaml", "out", USER, PASS).start()
