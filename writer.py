@@ -60,6 +60,7 @@ def write_section(section):
 
 
 def write_textbook(subject, course, textbook):
+    out = out_path('textbooks')
 
     isbn = textbook['isbn_13'] or textbook['isbn_10']
 
