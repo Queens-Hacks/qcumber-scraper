@@ -60,7 +60,6 @@ def write_section(section):
 
 
 def write_textbook(subject, course, textbook):
-    out = out_path('textbooks')
 
     isbn = textbook['isbn_13'] or textbook['isbn_10']
 
@@ -78,7 +77,7 @@ def write_textbook(subject, course, textbook):
             f.write(json.dumps(oldtextbook, indent=4, sort_keys=True))
     else:
         textbook['courses'] = [course_id]
-        write_json_file(textbook, filename, out)
+        write_json_file(textbook, filename, 'textbooks')
 
 
 def write_json_file(obj, filename, output_dir):
