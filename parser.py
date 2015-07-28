@@ -1,6 +1,7 @@
 import re
 import os
 import bs4
+from functools import wraps
 from datetime import datetime
 import logging
 from config import LOG_DIR
@@ -197,6 +198,7 @@ class SolusParser(object):
         an `all_*` function (by returning an empty list)
         """
 
+        @wraps(func)
         def wrapper(*args, **kwargs):
             filter_ = kwargs.get("filter_", None)
             if filter_ is not None and not len(filter_):
