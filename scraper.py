@@ -68,20 +68,34 @@ class SolusScraper(object):
 
         # Iterate over all courses
         for course_unique in all_courses:
-            self.session.open_course(course_unique)
+            remaining = self.session.open_course(course_unique)
+            
+            # logging.debug("remaining:&&&&&")
+            # logging.debug(remaining)
+                
+            while len(remaining) >= 1: 
+                
+                course_attrs = self.session.parser.course_attrs()
+                course_attrs['basic']['subject'] = subject['abbreviation']
 
-            course_attrs = self.session.parser.course_attrs()
-            course_attrs['basic']['subject'] = subject['abbreviation']
+                logging.info(u"----Course: {number} - {title}".format(**course_attrs['basic']))
+                logging.debug(u"COURSE DATA DUMP: {0}".format(course_attrs['extra']))
+                writer.write_course(course_attrs)
+                try:
+                    self.session.show_sections()
+                except Exception as e:
+                    logging.error("##############################################we crashed when selecting a section")
+                    logging.error(e)
+                    raise
 
-            logging.info(u"----Course: {number} - {title}".format(**course_attrs['basic']))
-            logging.debug(u"COURSE DATA DUMP: {0}".format(course_attrs['extra']))
-            writer.write_course(course_attrs)
+                self.scrape_terms(course_attrs)
+                self.session.return_from_course()
+                
+                if len(remaining)>1:
+                    self.session.open_course(course_unique, remaining[0])
+                
+                remaining = remaining[1:] 
 
-            self.session.show_sections()
-
-            self.scrape_terms(course_attrs)
-
-            self.session.return_from_course()
 
     def scrape_terms(self, course):
         """Scrape terms"""

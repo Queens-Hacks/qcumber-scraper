@@ -11,6 +11,9 @@ class SolusParser(object):
     # For getting the correct tags
     ALL_SUBJECTS = re.compile("DERIVED_SSS_BCC_GROUP_BOX_1\$147\$\$[0-9]+")
     ALL_COURSES = re.compile("CRSE_NBR\$[0-9]+")
+    
+    ALL_CAREERS = re.compile("CAREER\$[0-9]+")
+
     ALL_SECTIONS = re.compile("CLASS_SECTION\$[0-9]+")
     ALL_SECTION_TABLES = re.compile("CLASS\$scroll\$[0-9]+")
 
@@ -108,12 +111,18 @@ class SolusParser(object):
 
     def course_action(self, course_unique):
         """Return the action for the course unique"""
-        tag = self.soup.find("a", id=self.ALL_COURSES, text=course_unique)
-        if not tag:
+        tags = [self.soup.find("a", id=self.ALL_COURSES, text=course_unique)]
+        logging.debug(tags)
+        if not tags[0]:
+            #case for new career disambiguation page
+            tags = self.soup.find_all("a", id=self.ALL_CAREERS)
+            logging.debug(tags)
+        if not tags:
             logging.warning(u"Couldn't find the course '{0}'".format(course_unique))
-            return None
+            return []
 
-        return tag["id"]
+        return [x["id"] for x in tags]
+
 
     def term_value(self, term_unique):
         """Return the value for the term unique"""
