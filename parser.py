@@ -9,7 +9,7 @@ class SolusParser(object):
     """Parses SOLUS's crappy HTML"""
 
     # For getting the correct tags
-    ALL_SUBJECTS = re.compile("DERIVED_SSS_BCC_GROUP_BOX_1\$84\$\$[0-9]+")
+    ALL_SUBJECTS = re.compile("DERIVED_SSS_BCC_GROUP_BOX_1\$147\$\$[0-9]+")
     ALL_COURSES = re.compile("CRSE_NBR\$[0-9]+")
     ALL_SECTIONS = re.compile("CLASS_SECTION\$[0-9]+")
     ALL_SECTION_TABLES = re.compile("CLASS\$scroll\$[0-9]+")
@@ -428,6 +428,8 @@ class SolusParser(object):
                             # Last datafield, has multiple type -> value mappings
                             comp_map = {}
                             for i in range(x, len(data), 2):
+                                if labels[i].string != COURSE_COMPS:
+                                    break
                                 comp_map[data[i].string] = data[i+1].get_text()
 
                             ret['extra'][KEYMAP[labels[x].string]] = comp_map

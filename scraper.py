@@ -18,6 +18,7 @@ class SolusScraper(object):
         try:
             self.scrape_letters()
         except Exception as e:
+            logging.debug(e)
             self.session.parser.dump_html()
             raise
 
