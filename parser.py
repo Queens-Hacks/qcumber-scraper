@@ -112,11 +112,9 @@ class SolusParser(object):
     def course_action(self, course_unique):
         """Return the action for the course unique"""
         tags = [self.soup.find("a", id=self.ALL_COURSES, text=course_unique)]
-        logging.debug(tags)
         if not tags[0]:
             #case for new career disambiguation page
             tags = self.soup.find_all("a", id=self.ALL_CAREERS)
-            logging.debug(tags)
         if not tags:
             logging.warning(u"Couldn't find the course '{0}'".format(course_unique))
             return []
@@ -431,20 +429,23 @@ class SolusParser(object):
                 if box_title == COURSE_DETAIL:
                     # Units and course components
                     labels = table.find_all("span", {"class": EDITBOX_LABEL_CLASS})
+                    
                     data = table.find_all("span", {"class": EDITBOX_DATA_CLASS})
+
+                    dx = 0
                     for x in range(0, len(labels)):
                         if labels[x].string == COURSE_COMPS:
                             # Last datafield, has multiple type -> value mappings
                             comp_map = {}
-                            for i in range(x, len(data), 2):
-                                if labels[i].string != COURSE_COMPS:
-                                    break
+                            for i in range(x, x+(len(data)-len(labels)), 2):
                                 comp_map[data[i].string] = data[i+1].get_text()
+                                dx = i+2
 
                             ret['extra'][KEYMAP[labels[x].string]] = comp_map
-                            break
+                            continue
                         elif labels[x].string in KEYMAP:
-                            ret['extra'][KEYMAP[labels[x].string]] = data[x].get_text()
+                            ret['extra'][KEYMAP[labels[x].string]] = data[dx].get_text()
+                            dx+=1
 
             # Process the CEAB information
             elif box_title == CEAB:

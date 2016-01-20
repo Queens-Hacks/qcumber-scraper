@@ -70,21 +70,18 @@ class SolusScraper(object):
         for course_unique in all_courses:
             remaining = self.session.open_course(course_unique)
             
-            # logging.debug("remaining:&&&&&")
-            # logging.debug(remaining)
-                
             while len(remaining) >= 1: 
                 
                 course_attrs = self.session.parser.course_attrs()
                 course_attrs['basic']['subject'] = subject['abbreviation']
 
                 logging.info(u"----Course: {number} - {title}".format(**course_attrs['basic']))
-                logging.debug(u"COURSE DATA DUMP: {0}".format(course_attrs['extra']))
+
                 writer.write_course(course_attrs)
                 try:
                     self.session.show_sections()
                 except Exception as e:
-                    logging.error("##############################################we crashed when selecting a section")
+                    logging.error("Crashed when selecting a section")
                     logging.error(e)
                     raise
 
