@@ -9,8 +9,11 @@ class SolusParser(object):
     """Parses SOLUS's crappy HTML"""
 
     # For getting the correct tags
-    ALL_SUBJECTS = re.compile("DERIVED_SSS_BCC_GROUP_BOX_1\$84\$\$[0-9]+")
+    ALL_SUBJECTS = re.compile("DERIVED_SSS_BCC_GROUP_BOX_1\$147\$\$[0-9]+")
     ALL_COURSES = re.compile("CRSE_NBR\$[0-9]+")
+    
+    ALL_CAREERS = re.compile("CAREER\$[0-9]+")
+
     ALL_SECTIONS = re.compile("CLASS_SECTION\$[0-9]+")
     ALL_SECTION_TABLES = re.compile("CLASS\$scroll\$[0-9]+")
 
@@ -109,11 +112,21 @@ class SolusParser(object):
     def course_action(self, course_unique):
         """Return the action for the course unique"""
         tag = self.soup.find("a", id=self.ALL_COURSES, text=course_unique)
+
         if not tag:
             logging.warning(u"Couldn't find the course '{0}'".format(course_unique))
             return None
 
         return tag["id"]
+
+    def disambiguation_action(self):
+        """return the action for the last course on the disambiguation course. using the last course is not great but in the cases I found, it's always the most standard one"""
+        tags = self.soup.find_all("a", id=self.ALL_CAREERS)
+
+        if not tags:
+            return None
+
+        return tags[-1]["id"]
 
     def term_value(self, term_unique):
         """Return the value for the term unique"""
@@ -422,18 +435,24 @@ class SolusParser(object):
                 if box_title == COURSE_DETAIL:
                     # Units and course components
                     labels = table.find_all("span", {"class": EDITBOX_LABEL_CLASS})
+                    
                     data = table.find_all("span", {"class": EDITBOX_DATA_CLASS})
+
+                    dataIndex = 0
                     for x in range(0, len(labels)):
                         if labels[x].string == COURSE_COMPS:
                             # Last datafield, has multiple type -> value mappings
                             comp_map = {}
-                            for i in range(x, len(data), 2):
+                            for i in range(x, x+(len(data)-len(labels)), 2):
                                 comp_map[data[i].string] = data[i+1].get_text()
+                                #data index is lock-step with x until the course components, then it starts after the last component. (and is ahead of x)
+                                dataIndex = i+2
 
                             ret['extra'][KEYMAP[labels[x].string]] = comp_map
-                            break
+                            continue
                         elif labels[x].string in KEYMAP:
-                            ret['extra'][KEYMAP[labels[x].string]] = data[x].get_text()
+                            ret['extra'][KEYMAP[labels[x].string]] = data[dataIndex].get_text()
+                            dataIndex+=1
 
             # Process the CEAB information
             elif box_title == CEAB:

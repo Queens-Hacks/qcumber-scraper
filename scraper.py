@@ -18,6 +18,7 @@ class SolusScraper(object):
         try:
             self.scrape_letters()
         except Exception as e:
+            logging.debug(e)
             self.session.parser.dump_html()
             raise
 
@@ -68,19 +69,23 @@ class SolusScraper(object):
         # Iterate over all courses
         for course_unique in all_courses:
             self.session.open_course(course_unique)
-
+            
             course_attrs = self.session.parser.course_attrs()
             course_attrs['basic']['subject'] = subject['abbreviation']
 
             logging.info(u"----Course: {number} - {title}".format(**course_attrs['basic']))
-            logging.debug(u"COURSE DATA DUMP: {0}".format(course_attrs['extra']))
-            writer.write_course(course_attrs)
 
-            self.session.show_sections()
+            writer.write_course(course_attrs)
+            try:
+                self.session.show_sections()
+            except Exception as e:
+                logging.error("Crashed when selecting a section")
+                logging.error(e)
+                raise
 
             self.scrape_terms(course_attrs)
-
             self.session.return_from_course()
+            
 
     def scrape_terms(self, course):
         """Scrape terms"""
