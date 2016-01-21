@@ -138,7 +138,7 @@ if __name__ == "__main__":
         description = "Scrapes the entire catalog using multiple threads",
         threads = 1,
         job = ScrapeJob(letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ", deep=False),
-        threads_per_letter = 4,
+        threads_per_letter = 1,
     )
 
     # Start scraping

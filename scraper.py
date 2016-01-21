@@ -70,7 +70,6 @@ class SolusScraper(object):
         for course_unique in all_courses:
             self.session.open_course(course_unique)
             
-            # while len(remaining) >= 1: 
             course_attrs = self.session.parser.course_attrs()
             course_attrs['basic']['subject'] = subject['abbreviation']
 

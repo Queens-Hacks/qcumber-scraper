@@ -120,12 +120,13 @@ class SolusParser(object):
         return tag["id"]
 
     def disambiguation_action(self):
+        """return the action for the last course on the disambiguation course. using the last course is not great but in the cases I found, it's always the most standard one"""
         tags = self.soup.find_all("a", id=self.ALL_CAREERS)
 
         if not tags:
             return None
 
-        return tags[len(tags)-1]["id"]
+        return tags[-1]["id"]
 
     def term_value(self, term_unique):
         """Return the value for the term unique"""
@@ -437,20 +438,21 @@ class SolusParser(object):
                     
                     data = table.find_all("span", {"class": EDITBOX_DATA_CLASS})
 
-                    dx = 0
+                    dataIndex = 0
                     for x in range(0, len(labels)):
                         if labels[x].string == COURSE_COMPS:
                             # Last datafield, has multiple type -> value mappings
                             comp_map = {}
                             for i in range(x, x+(len(data)-len(labels)), 2):
                                 comp_map[data[i].string] = data[i+1].get_text()
-                                dx = i+2
+                                #data index is lock-step with x until the course components, then it starts after the last component. (and is ahead of x)
+                                dataIndex = i+2
 
                             ret['extra'][KEYMAP[labels[x].string]] = comp_map
                             continue
                         elif labels[x].string in KEYMAP:
-                            ret['extra'][KEYMAP[labels[x].string]] = data[dx].get_text()
-                            dx+=1
+                            ret['extra'][KEYMAP[labels[x].string]] = data[dataIndex].get_text()
+                            dataIndex+=1
 
             # Process the CEAB information
             elif box_title == CEAB:
