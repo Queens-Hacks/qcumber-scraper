@@ -165,42 +165,31 @@ class SolusSession(object):
 
     # ----------------------------- Courses ------------------------------------- #
 
-    def open_course(self, course_unique, action=None):
+    def open_course(self, course_unique):
         """Opens a course page"""
-        logging.debug(u"Opening course with unique '{0}', action: {1}".format(course_unique,action))
+        logging.debug(u"Opening course with unique '{0}'".format(course_unique))
         
-        actions = None
+        action = self.parser.course_action(course_unique)
+        if not action:
+            raise Exception(u"Tried to open a course with an invalid unique '{0}'".format(course_unique))
         
-        if action == None:
-            actions = self.parser.course_action(course_unique)
-            if len(actions)==0:
-                raise Exception(u"Tried to open a course with an invalid unique '{0}'".format(course_unique))
-            action = actions[0] 
-
         self._catalog_post(action)
-
-        # this is no longer guaranteed to work
+        
+        secondaryAction = self.parser.disambiguation_action()
+        
+        if secondaryAction:
+            logging.error(u"POSTING: {0}".format(secondaryAction))
+            self._catalog_post(secondaryAction)
+        
+        # unsure if this still works
         if self.recovery_state < 0:
             self.recovery_stack[2] = course_unique
-
-        if actions != None and len(actions)>1:
-            return actions[1:]
-        else:
-            return [actions]
-
-    # def return_to_offerings(self):
-    #     """Navigates back from course to subject"""
-    #     logging.debug("Returning from a course to disambiguation page")
-    #     self._catalog_post('DERIVED_SAA_CRS_RETURN_PB')
-
-    #     self.recovery_stack[3] = None
-    #     self.recovery_stack[2] = None
 
 
     def return_from_course(self):
         """Navigates back from course to subject"""
         logging.debug("Returning from a course")
-        #hacky, try to return from the new page first 
+        #hacky, attempt to return from the new page first 
         self._catalog_post('DERIVED_SAA_CRS_RETURN_PB')
         self._catalog_post('DERIVED_SSS_SEL_RETURN_PB')
 

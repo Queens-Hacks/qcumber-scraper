@@ -111,16 +111,21 @@ class SolusParser(object):
 
     def course_action(self, course_unique):
         """Return the action for the course unique"""
-        tags = [self.soup.find("a", id=self.ALL_COURSES, text=course_unique)]
-        if not tags[0]:
-            #case for new career disambiguation page
-            tags = self.soup.find_all("a", id=self.ALL_CAREERS)
-        if not tags:
+        tag = self.soup.find("a", id=self.ALL_COURSES, text=course_unique)
+
+        if not tag:
             logging.warning(u"Couldn't find the course '{0}'".format(course_unique))
-            return []
+            return None
 
-        return [x["id"] for x in tags]
+        return tag["id"]
 
+    def disambiguation_action(self):
+        tags = self.soup.find_all("a", id=self.ALL_CAREERS)
+
+        if not tags:
+            return None
+
+        return tags[len(tags)-1]["id"]
 
     def term_value(self, term_unique):
         """Return the value for the term unique"""

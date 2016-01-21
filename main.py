@@ -117,7 +117,7 @@ def _init_logging():
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(logging.Formatter("[%(asctime)s][%(levelname)s][%(processName)s]: %(message)s"))
     root_logger.addHandler(handler)
-    root_logger.setLevel(logging.DEBUG)
+    root_logger.setLevel(logging.INFO)
 
     logging.getLogger("requests").setLevel(logging.WARNING)
 
