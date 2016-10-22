@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import unicode_literals
 import logging
 import yaml
 import json
@@ -143,7 +144,7 @@ class TestUpdater(object):
                     logging.warning("Couldn't find subject {} specified in config file".format(subject))
                 continue
 
-            logging.info(u"--Subject: {abbreviation} - {title}".format(**curr_subject))
+            logging.info("--Subject: {abbreviation} - {title}".format(**curr_subject))
 
             self.session.dropdown_subject(curr_subject["_unique"])
             self.scrape_courses(courses, buildpath(path, subject))
@@ -174,8 +175,8 @@ class TestUpdater(object):
             course_attrs = self.session.parser.course_attrs()
             self.data_dump(course_path, course_attrs)
 
-            logging.info(u"----Course: {number} - {title}".format(**course_attrs['basic']))
-            logging.debug(u"COURSE DATA DUMP: {0}".format(course_attrs['extra']))
+            logging.info("----Course: {number} - {title}".format(**course_attrs['basic']))
+            logging.debug("COURSE DATA DUMP: {0}".format(course_attrs['extra']))
 
             self.session.show_sections()
 
@@ -200,7 +201,7 @@ class TestUpdater(object):
 
             term_path = buildpath(path, term)
 
-            logging.info(u"------Term: {year} - {season}".format(**curr_term))
+            logging.info("------Term: {year} - {season}".format(**curr_term))
             self.session.switch_to_term(curr_term["_unique"])
             self.data_dump(term_path)
 
@@ -227,13 +228,13 @@ class TestUpdater(object):
                     logging.warning("Couldn't find section {} specified in config file".format(section))
                 continue
 
-            logging.info(u"--------Section: {class_num}-{type} ({solus_id}) -- {status}".format(**curr_section["basic"]))
+            logging.info("--------Section: {class_num}-{type} ({solus_id}) -- {status}".format(**curr_section["basic"]))
 
             self.session.visit_section_page(curr_section["_unique"])
             new_data = self.session.parser.section_deep_attrs()
             self.data_dump(buildpath(path, section), new_data)
 
-            logging.info(u"----------Section details: session:{session} loc:{location} campus:{campus}".format(**new_data["details"]))
+            logging.info("----------Section details: session:{session} loc:{location} campus:{campus}".format(**new_data["details"]))
 
             self.session.return_from_section()
 

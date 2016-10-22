@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import unicode_literals
 import os
 import sys
 import logging
@@ -68,7 +69,7 @@ class JobManager(object):
                 temp = ScrapeJob(job_letter)
                 temp["subject_start"] = job["subject_start"] + s
                 temp["subject_step"] = threads_per_letter
-                logging.info(u"Made job: {0}".format(temp))
+                logging.info("Made job: {0}".format(temp))
                 self.jobs.put_nowait(temp)
 
     def run_jobs(self, queue):

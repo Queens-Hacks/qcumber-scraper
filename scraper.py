@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import logging
 import writer
 
@@ -13,7 +14,7 @@ class SolusScraper(object):
     def start(self):
         """Starts running the scrape outlined in the job"""
 
-        logging.info(u"Starting job: {0}".format(self.job))
+        logging.info("Starting job: {0}".format(self.job))
 
         try:
             self.scrape_letters()
@@ -45,7 +46,7 @@ class SolusScraper(object):
         # Iterate over all subjects
         for subject in all_subjects:
 
-            logging.info(u"--Subject: {abbreviation} - {title}".format(**subject))
+            logging.info("--Subject: {abbreviation} - {title}".format(**subject))
 
             writer.write_subject(subject)
 
@@ -72,8 +73,8 @@ class SolusScraper(object):
             course_attrs = self.session.parser.course_attrs()
             course_attrs['basic']['subject'] = subject['abbreviation']
 
-            logging.info(u"----Course: {number} - {title}".format(**course_attrs['basic']))
-            logging.debug(u"COURSE DATA DUMP: {0}".format(course_attrs['extra']))
+            logging.info("----Course: {number} - {title}".format(**course_attrs['basic']))
+            logging.debug("COURSE DATA DUMP: {0}".format(course_attrs['extra']))
             writer.write_course(course_attrs)
 
             self.session.show_sections()
@@ -88,7 +89,7 @@ class SolusScraper(object):
         # Get all terms on the page and iterate over them
         all_terms = self.session.parser.all_terms()
         for term in all_terms:
-            logging.info(u"------Term: {year} - {season}".format(**term))
+            logging.info("------Term: {year} - {season}".format(**term))
             self.session.switch_to_term(term["_unique"])
 
             self.session.view_all_sections()
@@ -103,9 +104,9 @@ class SolusScraper(object):
 
         if logging.getLogger().isEnabledFor(logging.INFO):
             for section in all_sections:
-                logging.info(u"--------Section: {class_num}-{type} ({solus_id}) -- {status}".format(**section["basic"]))
+                logging.info("--------Section: {class_num}-{type} ({solus_id}) -- {status}".format(**section["basic"]))
                 if not self.job["deep"]:
-                    logging.debug(u"SECTION CLASS DATA: {0}".format(section["classes"]))
+                    logging.debug("SECTION CLASS DATA: {0}".format(section["classes"]))
 
         # Deep scrape, go to the section page and add the data there
         if self.job["deep"]:
@@ -118,7 +119,7 @@ class SolusScraper(object):
 
                 self.session.return_from_section()
 
-                logging.debug(u"SECTION DEEP DATA DUMP: {0}".format(all_sections[i]))
+                logging.debug("SECTION DEEP DATA DUMP: {0}".format(all_sections[i]))
 
         for section in all_sections:
             section['basic']['course'] = course['basic']['number']
