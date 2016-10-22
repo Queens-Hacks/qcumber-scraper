@@ -216,7 +216,7 @@ class SolusParser(object):
         The alphanum's _unique is the same as it's common name so there's no need
         to return a dict
 
-        If `filter_` is specified, only alphanums with in `filter_` will be returned
+        If `filter_` is specified, only alphanums in `filter_` will be returned
         """
 
         # Find all subjects on the page

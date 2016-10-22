@@ -113,6 +113,9 @@ class TestUpdater(object):
 
         all_alphanums = list(self.session.parser.all_alphanums())
 
+        # Dump the initial course page
+        self.data_dump("_", all_alphanums)
+
         for alphanum, subjects in iterkeyvalue(self.config):
 
             if alphanum not in all_alphanums:
@@ -203,11 +206,10 @@ class TestUpdater(object):
 
             logging.info("------Term: {year} - {season}".format(**curr_term))
             self.session.switch_to_term(curr_term["_unique"])
-            self.data_dump(term_path)
 
             self.session.view_all_sections()
 
-            self.scrape_sections(sections, buildpath(term_path, "all"))
+            self.scrape_sections(sections, buildpath(term_path))
 
     def scrape_sections(self, sections, path):
         """Scrape sections"""
